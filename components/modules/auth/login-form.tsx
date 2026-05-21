@@ -64,6 +64,11 @@ export function LoginForm() {
           {error && (
             <p className="text-sm text-destructive">{error}</p>
           )}
+          <div className="text-right">
+            <Link href="/recuperar" className="text-xs text-muted-foreground hover:text-primary hover:underline">
+              ¿Olvidaste tu contraseña?
+            </Link>
+          </div>
         </CardContent>
         <CardFooter className="flex flex-col gap-3">
           <Button type="submit" className="w-full" disabled={loading}>
