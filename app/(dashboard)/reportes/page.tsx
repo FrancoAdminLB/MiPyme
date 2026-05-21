@@ -79,7 +79,6 @@ export default async function ReportesPage() {
   const avgYield = batches.length > 0
     ? batches.reduce((acc, b) => acc + (b.yield_percentage ?? 0), 0) / batches.length
     : 0
-  const stockAlerts  = alertsRes.data?.length ?? 0
   const expiryAlerts = expiryRes.data ?? []
 
   const alertRules   = rulesRes?.data ?? []

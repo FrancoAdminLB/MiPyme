@@ -20,14 +20,11 @@ export default async function InicioPage() {
 
   const supabase = createClient()
   const orgId = ctx.organization.id
-  const today = new Date().toISOString().split('T')[0]!
-
   const [
     batchesRes,
     ordersRes,
     stockAlertsRes,
     recentMovementsRes,
-    recentBatchesRes,
   ] = await Promise.all([
     supabase
       .from('production_batches')
@@ -53,19 +50,12 @@ export default async function InicioPage() {
       .eq('organization_id', orgId)
       .order('created_at', { ascending: false })
       .limit(6),
-    supabase
-      .from('production_batches')
-      .select('id, batch_code, product_name, status, quantity_kg, end_date')
-      .eq('organization_id', orgId)
-      .order('created_at', { ascending: false })
-      .limit(5),
   ])
 
   const batches        = batchesRes.data ?? []
   const orders         = ordersRes.data ?? []
   const stockAlerts    = stockAlertsRes.data ?? []
   const recentMovements = recentMovementsRes.data ?? []
-  const recentBatches  = recentBatchesRes.data ?? []
   // Estado general del sistema
   const systemStatus: 'ok' | 'warning' = (stockAlerts.length > 0 || orders.length > 0) ? 'warning' : 'ok'
 

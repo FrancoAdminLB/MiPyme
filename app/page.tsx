@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import {
-  ArrowUpRight, BarChart3, Package,
+  ArrowUpRight, BarChart3,
   FlaskConical, Bot, ShieldCheck, Zap,
 } from 'lucide-react'
 import { IndustryDemoSection } from '@/components/modules/landing/industry-demo-section'
