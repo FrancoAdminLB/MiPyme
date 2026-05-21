@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatNumber, formatDate } from '@/lib/utils'
 import { NuevoLoteButton } from '@/components/modules/produccion/nuevo-lote-button'
+import { ImportProduccionButton } from '@/components/modules/produccion/import-produccion-button'
 import { BatchInputsForm } from '@/components/modules/produccion/batch-inputs-form'
 import { BatchStatusButton } from '@/components/modules/produccion/batch-status-button'
 import { EditBatchForm } from '@/components/modules/produccion/edit-batch-form'
@@ -49,7 +50,10 @@ export default async function ProduccionPage() {
           <h1 className="text-2xl font-bold">Producción</h1>
           <p className="text-muted-foreground text-sm mt-1">Registro de lotes y trazabilidad</p>
         </div>
-        <NuevoLoteButton config={config} />
+        <div className="flex gap-2">
+          <ImportProduccionButton />
+          <NuevoLoteButton config={config} />
+        </div>
       </div>
 
       <Card>
