@@ -10,9 +10,20 @@ const supabaseAdmin = createClient(
 )
 
 export async function POST(req: Request) {
-  const { orgName, fullName, email, password, industry = 'dairy' } = await req.json()
+  const body = await req.json()
+  const { orgName, fullName, email, password, industry = 'dairy' } = body
 
-  const slug = orgName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+  // Validación de inputs
+  if (!orgName || typeof orgName !== 'string' || orgName.trim().length < 2 || orgName.trim().length > 100)
+    return NextResponse.json({ error: 'Nombre de empresa inválido (2–100 caracteres).' }, { status: 400 })
+  if (!fullName || typeof fullName !== 'string' || fullName.trim().length < 2 || fullName.trim().length > 100)
+    return NextResponse.json({ error: 'Nombre completo inválido.' }, { status: 400 })
+  if (!email || typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+    return NextResponse.json({ error: 'Email inválido.' }, { status: 400 })
+  if (!password || typeof password !== 'string' || password.length < 8)
+    return NextResponse.json({ error: 'La contraseña debe tener al menos 8 caracteres.' }, { status: 400 })
+
+  const slug = orgName.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
   const industryMeta = INDUSTRIES[industry as Industry]
   const industry_config = industryMeta?.defaultConfig ?? INDUSTRIES['dairy'].defaultConfig
 

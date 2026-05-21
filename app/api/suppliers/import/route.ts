@@ -16,7 +16,8 @@ export async function POST(req: Request) {
   if (!ctx) return Response.json({ error: 'No autorizado' }, { status: 401 })
 
   const { suppliers } = await req.json() as { suppliers: ImportSupplier[] }
-  if (!suppliers?.length) return Response.json({ error: 'Sin proveedores' }, { status: 400 })
+  if (!Array.isArray(suppliers) || !suppliers.length) return Response.json({ error: 'Sin proveedores' }, { status: 400 })
+  if (suppliers.length > 500) return Response.json({ error: 'Máximo 500 proveedores por importación.' }, { status: 400 })
 
   const supabase = createClient()
   const orgId = ctx.organization.id

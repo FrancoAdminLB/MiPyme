@@ -16,7 +16,8 @@ export async function POST(req: Request) {
   if (!ctx) return Response.json({ error: 'No autorizado' }, { status: 401 })
 
   const { batches } = await req.json() as { batches: ImportBatch[] }
-  if (!batches?.length) return Response.json({ error: 'Sin lotes' }, { status: 400 })
+  if (!Array.isArray(batches) || !batches.length) return Response.json({ error: 'Sin lotes' }, { status: 400 })
+  if (batches.length > 500) return Response.json({ error: 'Máximo 500 lotes por importación.' }, { status: 400 })
 
   const supabase = createClient()
   const orgId = ctx.organization.id

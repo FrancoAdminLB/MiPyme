@@ -84,11 +84,20 @@ ${alertRules.map(r => `- ${r.name}: ${r.metric} ${r.operator} ${r.threshold}`).j
     messages: Array<{ role: 'user' | 'assistant'; content: string }>
   }
 
+  if (!Array.isArray(messages) || messages.length > 40)
+    return new Response('Demasiados mensajes en el contexto.', { status: 400 })
+
+  // Truncar mensajes largos para evitar abuso
+  const sanitizedMessages = messages.map(m => ({
+    role: m.role,
+    content: typeof m.content === 'string' ? m.content.slice(0, 4000) : '',
+  }))
+
   const stream = await anthropic.messages.stream({
     model: 'claude-sonnet-4-20250514',
     max_tokens: 1000,
     system: systemPrompt,
-    messages,
+    messages: sanitizedMessages,
   })
 
   const encoder = new TextEncoder()
