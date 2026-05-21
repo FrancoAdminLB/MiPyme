@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Pencil, X, Save } from 'lucide-react'
+import { Pencil, X, Save, MessageCircle } from 'lucide-react'
 import type { Organization } from '@/types'
 import { INDUSTRY_GROUPS, INDUSTRIES } from '@/lib/industries'
 
@@ -15,9 +15,10 @@ export function EditOrganizationForm({ organization }: { organization: Organizat
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [form, setForm] = useState({
-    name:     organization.name,
-    industry: organization.industry,
-    language: organization.industry_config?.language ?? 'es_AR',
+    name:               organization.name,
+    industry:           organization.industry,
+    language:           organization.industry_config?.language ?? 'es_AR',
+    notification_phone: (organization as Organization & { notification_phone?: string }).notification_phone ?? '',
   })
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
@@ -101,6 +102,21 @@ export function EditOrganizationForm({ organization }: { organization: Organizat
                   <option value="es_AR">🇦🇷 Español (Argentina)</option>
                   <option value="en">🇺🇸 English (próximamente)</option>
                 </select>
+              </div>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1.5">
+                  <MessageCircle className="h-3.5 w-3.5 text-green-600" />
+                  WhatsApp para alertas
+                </Label>
+                <Input
+                  name="notification_phone"
+                  value={form.notification_phone}
+                  onChange={handleChange}
+                  placeholder="+54 9 11 1234 5678"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Recibís un mensaje cuando el stock baja del mínimo. Formato internacional: +54 9 11...
+                </p>
               </div>
               {error && <p className="text-sm text-destructive">{error}</p>}
               <div className="flex justify-end gap-3 pt-2">

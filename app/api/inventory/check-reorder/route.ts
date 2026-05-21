@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { createClient as createServerClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { sendWhatsApp, stockAlertMessage } from '@/lib/notifications/whatsapp'
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -62,6 +63,23 @@ export async function POST(req: Request) {
 
   const { error } = await supabaseAdmin.from('purchase_orders').insert(orders)
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+
+  // Notificación WhatsApp — fire and forget
+  const { data: org } = await supabaseAdmin
+    .from('organizations')
+    .select('name, notification_phone')
+    .eq('id', orgId)
+    .single()
+
+  if (org?.notification_phone) {
+    const alertItems = toCreate.map(i => ({
+      name: i.name,
+      stock: i.current_stock,
+      min: i.min_stock,
+      unit: 'u',
+    }))
+    sendWhatsApp(org.notification_phone, stockAlertMessage(org.name, alertItems))
+  }
 
   return NextResponse.json({ created: orders.length, items: toCreate.map(i => i.name) })
 }

@@ -24,7 +24,7 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ error: 'Solo administradores pueden editar la organización' }, { status: 403 })
   }
 
-  const { name, industry, language } = await req.json()
+  const { name, industry, language, notification_phone } = await req.json()
 
   // Obtener org actual para preservar config existente
   const { data: currentOrg } = await supabase
@@ -33,7 +33,11 @@ export async function PATCH(req: Request) {
     .eq('id', profile.organization_id)
     .single()
 
-  const updates: Record<string, unknown> = { name, industry }
+  const updates: Record<string, unknown> = {
+    name,
+    industry,
+    notification_phone: notification_phone?.trim() || null,
+  }
 
   if (currentOrg && currentOrg.industry !== industry) {
     // Cambio de industria: aplicar defaultConfig preservando el idioma actual

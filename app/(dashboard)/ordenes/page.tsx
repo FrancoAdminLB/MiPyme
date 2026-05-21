@@ -2,9 +2,10 @@ import { getAuthContext } from '@/lib/supabase/helpers'
 import { createClient } from '@/lib/supabase/server'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatNumber, formatDate } from '@/lib/utils'
-import { ShoppingCart, Zap } from 'lucide-react'
+import { ShoppingCart, Zap, Printer } from 'lucide-react'
 import { OrderActions } from '@/components/modules/ordenes/order-actions'
 import { NewOrderButton } from '@/components/modules/ordenes/new-order-button'
+import Link from 'next/link'
 
 const STATUS_LABELS: Record<string, { label: string; class: string }> = {
   pending:   { label: 'Pendiente',  class: 'bg-yellow-100 text-yellow-700' },
@@ -57,7 +58,14 @@ export default async function OrdenesPage() {
             Reposición automática y manual de inventario
           </p>
         </div>
-        <NewOrderButton items={items as never} suppliers={suppliers as never} />
+        <div className="flex gap-2">
+          <Link href="/ordenes/print" target="_blank">
+            <button className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground border rounded-md px-3 py-2 transition-colors">
+              <Printer className="h-4 w-4" /> Imprimir órdenes
+            </button>
+          </Link>
+          <NewOrderButton items={items as never} suppliers={suppliers as never} />
+        </div>
       </div>
 
       {/* Resumen */}
