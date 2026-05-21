@@ -17,7 +17,7 @@ export default async function ReportesPage() {
   const in30days  = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]!
   const ago30days = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]!
 
-  const [batchesRes, , alertsRes, expiryRes, chartBatchesRes, allBatchesRes, rulesRes, inventoryItemsRes] = await Promise.all([
+  const [batchesRes, , , expiryRes, chartBatchesRes, allBatchesRes, rulesRes, inventoryItemsRes] = await Promise.all([
     // KPI: lotes completados últimos 30 días
     supabase
       .from('production_batches')
