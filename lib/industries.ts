@@ -83,7 +83,7 @@ export const INDUSTRIES: Record<Industry, IndustryMeta> = {
 
   // ─── DAIRY ────────────────────────────────────────────────────────────────
   dairy: {
-    label: 'Lácteos / Tambos',
+    label: 'Lácteos / Elaboración de quesos',
     region: 'Todo el país',
     inputLabel: 'Litros de leche',
     outputLabel: 'Kg producidos',
