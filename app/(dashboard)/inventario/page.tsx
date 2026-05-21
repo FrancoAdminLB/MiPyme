@@ -5,6 +5,7 @@ import { formatNumber, formatDate } from '@/lib/utils'
 import { AlertTriangle, Clock } from 'lucide-react'
 import { MovimientoForm } from '@/components/modules/inventario/movimiento-form'
 import { EditItemForm } from '@/components/modules/inventario/edit-item-form'
+import { ImportInventarioButton } from '@/components/modules/inventario/import-inventario-button'
 
 const CATEGORY_LABELS: Record<string, string> = {
   materia_prima:    'Materias Primas',
@@ -56,6 +57,7 @@ export default async function InventarioPage() {
           <p className="text-muted-foreground text-sm mt-1">Stock actual y movimientos</p>
         </div>
         <div className="flex gap-2">
+          <ImportInventarioButton />
           <EditItemForm suppliers={suppliers as never} mode="new" />
           <MovimientoForm items={items as never} />
         </div>
