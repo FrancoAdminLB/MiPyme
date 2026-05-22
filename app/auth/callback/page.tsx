@@ -1,10 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
-export default function CallbackPage() {
+function CallbackHandler() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [status, setStatus] = useState<'loading' | 'error'>('loading')
@@ -32,9 +32,15 @@ export default function CallbackPage() {
 
   if (status === 'error') return null
 
+  return <p className="text-sm text-muted-foreground">Verificando link...</p>
+}
+
+export default function CallbackPage() {
   return (
     <div className="min-h-screen flex items-center justify-center">
-      <p className="text-sm text-muted-foreground">Verificando link...</p>
+      <Suspense fallback={<p className="text-sm text-muted-foreground">Cargando...</p>}>
+        <CallbackHandler />
+      </Suspense>
     </div>
   )
 }
