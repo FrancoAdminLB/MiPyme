@@ -30,6 +30,17 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser()
 
   const pathname = request.nextUrl.pathname
+
+  // Interceptar ?code= que Supabase manda al Site URL raíz
+  // y redirigirlo al callback handler correcto
+  const code = request.nextUrl.searchParams.get('code')
+  if (code && (pathname === '/' || pathname === '/login')) {
+    const callbackUrl = request.nextUrl.clone()
+    callbackUrl.pathname = '/auth/callback'
+    callbackUrl.searchParams.set('code', code)
+    callbackUrl.searchParams.set('next', '/nueva-contrasena')
+    return NextResponse.redirect(callbackUrl)
+  }
   const isAuthRoute = pathname.startsWith('/login') || pathname.startsWith('/registro') || pathname.startsWith('/auth/')
   const isDashboardRoute =
     pathname.startsWith('/produccion') ||
