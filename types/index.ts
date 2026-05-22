@@ -20,6 +20,7 @@ export type Industry =
   | 'acuicultura'
   | 'cosmetica'
   | 'pesca'
+  | 'suplementos'
 export type Plan = 'free' | 'starter' | 'pro' | 'enterprise'
 export type UserRole = 'admin' | 'manager' | 'operator'
 

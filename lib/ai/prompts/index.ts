@@ -224,6 +224,20 @@ const PROMPTS: Record<Industry, string> = {
 - Destino: exportación (certificados SENASA) o mercado interno
 - SENASA + SAGyP: habilitación de planta, certificados sanitarios`
   ),
+
+  suplementos: buildGenericPrompt(
+    'suplementos dietarios y nutrición deportiva',
+    'kg de materias primas',
+    'unidades producidas',
+    `- Formulación: código de fórmula, materias primas, lotes de insumos
+- Proceso: pesado, mezclado, encapsulado/comprimido
+- Control de calidad: peso por unidad, microbiología, físico-químico, metales pesados
+- Liberación de lotes: conforme / no conforme para comercialización
+- Trazabilidad completa de materias primas a producto terminado
+- ANMAT Disp. 1637/01: suplementos dietarios — habilitación, fórmula registrada
+- ANMAT: BPM para suplementos, rotulado nutricional obligatorio
+- Normativa de importación de ingredientes: certificados de origen y análisis`
+  ),
 }
 
 export function getSystemPrompt(industry: Industry): string {
