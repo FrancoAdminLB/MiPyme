@@ -38,7 +38,7 @@ export async function updateSession(request: NextRequest) {
     const callbackUrl = request.nextUrl.clone()
     callbackUrl.pathname = '/auth/callback'
     callbackUrl.searchParams.set('code', code)
-    callbackUrl.searchParams.set('next', '/nueva-contrasena')
+    callbackUrl.searchParams.delete('next')
     return NextResponse.redirect(callbackUrl)
   }
   const isAuthRoute = pathname.startsWith('/login') || pathname.startsWith('/registro') || pathname.startsWith('/auth/')
