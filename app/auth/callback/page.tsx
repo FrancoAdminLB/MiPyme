@@ -7,14 +7,14 @@ import { createClient } from '@/lib/supabase/client'
 function CallbackHandler() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [status, setStatus] = useState<'loading' | 'error'>('loading')
+  const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
   useEffect(() => {
     const code = searchParams.get('code')
     const next = searchParams.get('next') ?? '/nueva-contrasena'
 
     if (!code) {
-      router.replace('/login?error=link_invalido')
+      setErrorMsg('No se recibió código en la URL')
       return
     }
 
@@ -22,15 +22,21 @@ function CallbackHandler() {
 
     supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
       if (error) {
-        setStatus('error')
-        router.replace('/login?error=link_invalido')
+        setErrorMsg(`Error: ${error.message} (status: ${error.status})`)
       } else {
         router.replace(next)
       }
     })
   }, [router, searchParams])
 
-  if (status === 'error') return null
+  if (errorMsg) {
+    return (
+      <div className="space-y-3 text-center">
+        <p className="text-sm text-destructive">{errorMsg}</p>
+        <a href="/recuperar" className="text-sm text-primary underline">Solicitar nuevo link</a>
+      </div>
+    )
+  }
 
   return <p className="text-sm text-muted-foreground">Verificando link...</p>
 }
