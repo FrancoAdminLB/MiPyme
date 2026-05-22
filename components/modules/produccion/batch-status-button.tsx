@@ -4,22 +4,62 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { CheckCircle, XCircle } from 'lucide-react'
+import type { IndustryConfig, CustomField } from '@/types'
 
 interface BatchStatusButtonProps {
   batchId: string
   currentStatus: string
   productName: string
   quantityKg: number
+  customData?: Record<string, unknown>
+  config?: IndustryConfig
 }
 
-export function BatchStatusButton({ batchId, currentStatus, productName, quantityKg }: BatchStatusButtonProps) {
+function getMissingRequiredFields(customData: Record<string, unknown>, config: IndustryConfig): string[] {
+  const fields: CustomField[] = config.custom_fields ?? []
+  return fields
+    .filter(f => f.required && (customData[f.key] === undefined || customData[f.key] === null || customData[f.key] === ''))
+    .map(f => f.label)
+}
+
+function getOutOfRangeFields(customData: Record<string, unknown>, config: IndustryConfig): string[] {
+  const fields: CustomField[] = config.custom_fields ?? []
+  return fields
+    .filter(f => f.compliance_ref && f.type === 'number' && (f.min_value !== undefined || f.max_value !== undefined))
+    .filter(f => {
+      const val = parseFloat(String(customData[f.key] ?? ''))
+      if (isNaN(val)) return false
+      if (f.min_value !== undefined && val < f.min_value) return true
+      if (f.max_value !== undefined && val > f.max_value) return true
+      return false
+    })
+    .map(f => f.label)
+}
+
+export function BatchStatusButton({ batchId, currentStatus, productName, quantityKg, customData, config }: BatchStatusButtonProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
 
   if (currentStatus !== 'in_progress') return null
 
   async function update(newStatus: 'completed' | 'cancelled') {
-    if (!confirm(newStatus === 'completed' ? '¿Marcás este lote como completado?' : '¿Cancelás este lote?')) return
+    if (newStatus === 'completed' && customData && config) {
+      const missing = getMissingRequiredFields(customData, config)
+      const outOfRange = getOutOfRangeFields(customData, config)
+      if (missing.length > 0 || outOfRange.length > 0) {
+        const lines: string[] = []
+        if (missing.length > 0) lines.push(`Campos requeridos sin completar:\n• ${missing.join('\n• ')}`)
+        if (outOfRange.length > 0) lines.push(`Parámetros fuera de norma:\n• ${outOfRange.join('\n• ')}`)
+        const proceed = confirm(
+          `⚠️ ADVERTENCIA — Incumplimiento normativo\n\n${lines.join('\n\n')}\n\n¿Querés completar el lote de todas formas?`
+        )
+        if (!proceed) return
+      } else {
+        if (!confirm('¿Marcás este lote como completado?')) return
+      }
+    } else {
+      if (!confirm(newStatus === 'completed' ? '¿Marcás este lote como completado?' : '¿Cancelás este lote?')) return
+    }
     setLoading(true)
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()

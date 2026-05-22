@@ -9,6 +9,29 @@ import { BatchStatusButton } from '@/components/modules/produccion/batch-status-
 import { EditBatchForm } from '@/components/modules/produccion/edit-batch-form'
 import { BatchDetailButton } from '@/components/modules/produccion/batch-detail-button'
 import { DeleteBatchButton } from '@/components/modules/produccion/delete-batch-button'
+import type { CustomField, IndustryConfig } from '@/types'
+
+function getComplianceBadge(customData: Record<string, unknown> | null, config: IndustryConfig) {
+  const fields: CustomField[] = config.custom_fields ?? []
+  const required = fields.filter(f => f.required)
+  if (required.length === 0) return null
+
+  const data = customData ?? {}
+  const missing = required.filter(f => data[f.key] === undefined || data[f.key] === null || data[f.key] === '')
+  const outOfRange = fields
+    .filter(f => f.compliance_ref && f.type === 'number' && (f.min_value !== undefined || f.max_value !== undefined))
+    .filter(f => {
+      const val = parseFloat(String(data[f.key] ?? ''))
+      if (isNaN(val)) return false
+      if (f.min_value !== undefined && val < f.min_value) return true
+      if (f.max_value !== undefined && val > f.max_value) return true
+      return false
+    })
+
+  if (outOfRange.length > 0) return { status: 'error', text: 'Fuera de norma', color: 'text-red-600' }
+  if (missing.length > 0) return { status: 'warn', text: `${missing.length} campo${missing.length > 1 ? 's' : ''} pendiente${missing.length > 1 ? 's' : ''}`, color: 'text-amber-600' }
+  return { status: 'ok', text: 'Normativa OK', color: 'text-green-600' }
+}
 
 export default async function ProduccionPage() {
   const ctx = await getAuthContext()
@@ -78,12 +101,14 @@ export default async function ProduccionPage() {
                     <th className="text-left pb-3 pr-4 font-medium">Inicio</th>
                     <th className="text-left pb-3 pr-4 font-medium">Insumos</th>
                     <th className="text-left pb-3 pr-4 font-medium">Estado</th>
+                    <th className="text-left pb-3 pr-4 font-medium">Normativa</th>
                     <th className="text-left pb-3 font-medium"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
                   {batches.map((b) => {
                     const batchInputs = inputs.filter(i => i.batch_id === b.id)
+                    const compBadge = b.status === 'in_progress' ? getComplianceBadge(b.custom_data as Record<string, unknown> | null, config) : null
                     return (
                       <tr key={b.id} className="hover:bg-muted/30 transition-colors">
                         <td className="py-3 pr-4 font-mono text-xs">{b.batch_code}</td>
@@ -110,16 +135,28 @@ export default async function ProduccionPage() {
                              b.status === 'in_progress' ? 'En proceso' : 'Cancelado'}
                           </span>
                         </td>
+                        <td className="py-3 pr-4">
+                          {compBadge && (
+                            <span className={`text-xs font-medium ${compBadge.color}`} title={compBadge.text}>
+                              {compBadge.status === 'ok' && '✓ '}
+                              {compBadge.status === 'warn' && '⚠ '}
+                              {compBadge.status === 'error' && '✕ '}
+                              {compBadge.text}
+                            </span>
+                          )}
+                        </td>
                         <td className="py-3">
                           <div className="flex items-center gap-2">
                             <BatchDetailButton batch={b as never} config={config} />
                             <EditBatchForm batch={b} config={config} />
                             <BatchStatusButton
-                          batchId={b.id}
-                          currentStatus={b.status}
-                          productName={b.product_name}
-                          quantityKg={b.quantity_kg}
-                        />
+                              batchId={b.id}
+                              currentStatus={b.status}
+                              productName={b.product_name}
+                              quantityKg={b.quantity_kg}
+                              customData={b.custom_data as Record<string, unknown> | undefined}
+                              config={config}
+                            />
                             <DeleteBatchButton batchId={b.id} batchCode={b.batch_code} />
                           </div>
                         </td>
