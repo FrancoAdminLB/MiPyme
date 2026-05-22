@@ -27,7 +27,7 @@ export function RecuperarForm() {
 
     setLoading(false)
     if (error) {
-      setError('No pudimos enviar el email. Verificá la dirección.')
+      setError(error.message || 'No pudimos enviar el email. Verificá la dirección.')
       return
     }
     setSent(true)
