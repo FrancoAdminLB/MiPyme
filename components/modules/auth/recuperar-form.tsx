@@ -21,7 +21,7 @@ export function RecuperarForm() {
     setLoading(true)
 
     const supabase = createClient()
-    const redirectTo = `${window.location.origin}/nueva-contrasena`
+    const redirectTo = `${window.location.origin}/auth/callback?next=/nueva-contrasena`
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo })
 
