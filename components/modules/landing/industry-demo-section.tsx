@@ -281,35 +281,35 @@ const DEMOS: Record<string, IndustryDemo> = {
   },
 
   Chacinados: {
-    regulator: 'SENASA + CAA',
-    tagline: 'Trazabilidad del cerdo al mostrador.',
-    description: 'Los chacinados son uno de los rubros más exigentes en control sanitario: temperatura de cocción interna, actividad de agua y condiciones de cámara de maduración deben estar documentados por lote. CAA Art. 302 establece ≥72°C en cocción interna. MiPyme registra cada parámetro, valida en tiempo real y permite rastrear cualquier lote en segundos.',
+    regulator: 'SENASA + CAA + Municipio',
+    tagline: 'De la media res al mostrador, todo trazado.',
+    description: 'Una carnicería con chacinados tiene dos flujos críticos: el desposte (trazabilidad del DT SENASA al corte final con % de merma) y la elaboración de embutidos (CAA Art. 302 — temperatura interna ≥72°C, nitritos ≤150 ppm). Más la cámara frigorífica monitoreada 0–4°C y la vitrina de exhibición ≤7°C. MiPyme registra todo, valida en tiempo real y te deja listo para cualquier inspección municipal o SENASA.',
     pains: [
-      'Las temperaturas de cocción interna no quedan registradas por lote con fecha y responsable',
-      'El control de cámara de maduración es manual, sin historial ni alertas automáticas de desvío',
-      'Si hay que hacer un retiro de producto, rastrear la materia prima del lote afectado puede llevar días',
+      'El desposte queda sin registro: no sabés cuánto entró, cuánto salió por corte ni cuál fue la merma real del día',
+      'La temperatura de cámara se controla manualmente; si hay un desvío nocturno, te enterás cuando el producto ya está comprometido',
+      'Las temperaturas de cocción interna de los embutidos no quedan documentadas por lote con fecha y responsable',
     ],
     gains: [
-      'Pasar cualquier inspección SENASA con toda la documentación de temperatura y proceso disponible en segundos',
-      'Poder hacer un retiro selectivo de producto en minutos sin afectar otros lotes ni exponer la empresa',
-      'Tener el historial de temperatura de cámara como garantía de calidad ante clientes y distribuidores',
+      'Saber exactamente cuántos kg de cada corte entraron a la cámara y cuántos salieron por venta en el día',
+      'Pasar cualquier inspección SENASA o municipal con historial digital de temperatura de cámara y proceso de elaboración',
+      'Conocer el % de merma real de cada desposte para negociar mejor con el frigorífico y fijar precios con datos',
     ],
     painRelievers: [
+      'Registro de desposte por media res: cortes obtenidos, kg de merma y % de rendimiento automático',
+      'Control de temperatura de cámara (0–4°C) y vitrina (≤7°C) con compliance CAA Art. 271 y estado visible en el dashboard',
       'Temperatura interna de cocción por lote con validación automática CAA Art. 302 (≥72°C) y alerta de incumplimiento',
-      'Histórico continuo de temperatura y humedad de cámara de maduración con alertas de desvío automáticas',
-      'Trazabilidad de lote en segundos: qué materia prima entró, en qué fecha y quién fabricó cada partida',
     ],
     gainCreators: [
-      'Toda la documentación de elaboración digital que convierte cada inspección SENASA en un trámite rápido',
-      'Comparativo de parámetros de proceso por producto para estandarizar la calidad y reducir variabilidad entre lotes',
-      'Historial de maduración por producto que permite ajustar tiempos y condiciones para mejorar el resultado final',
+      'Historial de merma por proveedor y categoría de animal para identificar de dónde viene la mejor carne y negociar con datos',
+      'Desglose de ventas por canal (mostrador, mayoristas, gastronomía) para entender dónde está el margen real',
+      'Toda la documentación de trazabilidad (DT SENASA, habilitación frigorífico, lotes) disponible en segundos ante una auditoría',
     ],
     metrics: [
+      { label: 'Merma desposte', value: '22%', sub: 'Referencia normal ✓' },
+      { label: 'Temp. cámara', value: '2.8°C', sub: 'CAA ≤4°C ✓' },
       { label: 'Temp. cocción', value: '74°C', sub: 'CAA ≥72°C ✓' },
-      { label: 'Hum. cámara', value: '82%', sub: 'Dentro de rango ✓' },
-      { label: 'En maduración', value: '6 lotes', sub: 'Salame · Chorizo' },
     ],
-    stages: ['Formulación', 'Embutido', 'Cocción / Ahumado', 'Maduración', 'Envasado'],
+    stages: ['Recepción hacienda', 'Desposte', 'Cámara frigorífica', 'Venta / Despacho', 'Formulación', 'Envasado'],
   },
 
   Cerealera: {

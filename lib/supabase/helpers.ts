@@ -17,9 +17,13 @@ function mergeWithIndustryDefaults(industry: Industry, storedConfig: IndustryCon
 
   const mergedFields = defaultFields.map(defaultField => {
     const stored = storedFields.find(f => f.key === defaultField.key)
-    // El default aporta compliance (min_value, max_value, compliance_ref)
-    // El stored aporta personalizaciones del tenant (label, required, etc.)
-    return { ...defaultField, ...(stored ?? {}) }
+    // El tenant puede personalizar label y required.
+    // stage, type, unit, min_value, max_value, compliance_ref, options siempre
+    // vienen del default (son parte de la plantilla de industria, no del tenant).
+    return {
+      ...defaultField,
+      ...(stored ? { label: stored.label, required: stored.required } : {}),
+    }
   })
 
   // Agregar campos custom del tenant que no están en los defaults
@@ -29,7 +33,7 @@ function mergeWithIndustryDefaults(industry: Industry, storedConfig: IndustryCon
     input_label:   storedConfig.input_label   ?? defaults.input_label,
     output_label:  storedConfig.output_label  ?? defaults.output_label,
     product_types: storedConfig.product_types ?? defaults.product_types,
-    stages:        storedConfig.stages        ?? defaults.stages,
+    stages:        defaults.stages,   // siempre los stages actuales de la industria
     custom_fields: [...mergedFields, ...extraFields],
     currency:      storedConfig.currency,
     units:         storedConfig.units,
@@ -56,22 +60,41 @@ export async function getAuthContext(): Promise<{
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('*, organizations(id, name, slug, industry, plan, industry_config, onboarding_completed, created_at)')
+    .select('*')
     .eq('id', user.id)
     .single()
 
-  if (!profile || !profile.organizations) return null
+  if (!profile) return null
 
-  const org = Array.isArray(profile.organizations)
-    ? profile.organizations[0]
-    : profile.organizations
+  // Super admin: usar la org activa si está seleccionada, si no la propia
+  const orgId = (!!profile.is_super_admin && profile.super_admin_active_org)
+    ? profile.super_admin_active_org
+    : profile.organization_id
+
+  const { data: org } = await supabase
+    .from('organizations')
+    .select('id, name, slug, industry, plan, industry_config, onboarding_completed, created_at')
+    .eq('id', orgId)
+    .single()
+
+  // Fallback a org propia si la activa no es accesible
+  const finalOrg = org ?? (orgId !== profile.organization_id
+    ? await supabase
+        .from('organizations')
+        .select('id, name, slug, industry, plan, industry_config, onboarding_completed, created_at')
+        .eq('id', profile.organization_id)
+        .single()
+        .then(r => r.data)
+    : null)
+
+  if (!finalOrg) return null
 
   // Mergear con defaults de la industria para garantizar compliance data
   const mergedOrg = {
-    ...org,
+    ...finalOrg,
     industry_config: mergeWithIndustryDefaults(
-      org.industry as Industry,
-      (org.industry_config ?? {}) as IndustryConfig
+      finalOrg.industry as Industry,
+      (finalOrg.industry_config ?? {}) as IndustryConfig
     ),
   }
 

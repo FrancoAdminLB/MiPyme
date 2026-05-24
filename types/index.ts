@@ -42,6 +42,8 @@ export interface Profile {
   full_name: string | null
   role: UserRole
   avatar_url: string | null
+  is_super_admin: boolean
+  super_admin_active_org: string | null
   created_at: string
 }
 
@@ -56,6 +58,7 @@ export interface IndustryConfig {
   product_types?: string[]        // Ej: ["Gouda", "Sardo"]
   stages?: string[]               // Etapas del proceso productivo
   language?: 'es_AR' | 'en'      // Idioma de la interfaz
+  product_templates?: Record<string, Record<string, string>> // Valores por defecto por tipo de producto
 }
 
 export interface CustomField {
@@ -149,6 +152,61 @@ export interface ProductionBatchInput {
   created_at: string
   // joins
   inventory_items?: InventoryItem
+}
+
+// ─── Pedidos de clientes ──────────────────────────────────────────
+export type SalesOrderStatus =
+  | 'pending' | 'confirmed' | 'preparing' | 'ready' | 'delivered' | 'cancelled'
+
+export interface SalesOrder {
+  id: string
+  organization_id: string
+  order_number: string
+  client_name: string
+  client_cuit: string | null
+  client_email: string | null
+  client_phone: string | null
+  status: SalesOrderStatus
+  delivery_date: string | null
+  notes: string | null
+  total_amount: number
+  created_by: string
+  created_at: string
+  confirmed_at: string | null
+  delivered_at: string | null
+}
+
+export interface SalesOrderItem {
+  id: string
+  organization_id: string
+  order_id: string
+  product_name: string
+  quantity: number
+  unit: string
+  unit_price: number
+  subtotal: number
+  notes: string | null
+}
+
+// ─── Facturas ─────────────────────────────────────────────────────
+export type InvoiceStatus = 'pending' | 'issued' | 'error'
+
+export interface Invoice {
+  id: string
+  organization_id: string
+  sales_order_id: string | null
+  tipo_comprobante: 'A' | 'B' | 'C'
+  punto_venta: number
+  numero: number | null
+  cuit_receptor: string | null
+  razon_social: string | null
+  total_amount: number
+  cae: string | null
+  cae_vencimiento: string | null
+  status: InvoiceStatus
+  error_message: string | null
+  issued_at: string | null
+  created_at: string
 }
 
 // ─── UI helpers ───────────────────────────────────────────────────

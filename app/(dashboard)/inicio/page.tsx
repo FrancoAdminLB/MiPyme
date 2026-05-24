@@ -2,8 +2,8 @@ import { getAuthContext } from '@/lib/supabase/helpers'
 import { createClient } from '@/lib/supabase/server'
 import { formatNumber, formatDate } from '@/lib/utils'
 import {
-  FlaskConical, Package, ShoppingCart,
-  ArrowRight, CheckCircle2, Clock,
+  FlaskConical, Package, ShoppingCart, ShoppingBag,
+  ArrowRight, CheckCircle2, Clock, CheckCheck,
 } from 'lucide-react'
 import Link from 'next/link'
 import { Card, CardContent } from '@/components/ui/card'
@@ -20,11 +20,15 @@ export default async function InicioPage() {
 
   const supabase = createClient()
   const orgId = ctx.organization.id
+  const today = new Date().toISOString().split('T')[0]
+
   const [
     batchesRes,
+    completedTodayRes,
     ordersRes,
     stockAlertsRes,
     recentMovementsRes,
+    pedidosRes,
   ] = await Promise.all([
     supabase
       .from('production_batches')
@@ -32,6 +36,12 @@ export default async function InicioPage() {
       .eq('organization_id', orgId)
       .eq('status', 'in_progress')
       .order('created_at', { ascending: false }),
+    supabase
+      .from('production_batches')
+      .select('id, product_name, quantity_kg')
+      .eq('organization_id', orgId)
+      .eq('status', 'completed')
+      .eq('end_date', today),
     supabase
       .from('purchase_orders')
       .select('id, status, inventory_items(name, unit), quantity_requested')
@@ -50,14 +60,23 @@ export default async function InicioPage() {
       .eq('organization_id', orgId)
       .order('created_at', { ascending: false })
       .limit(6),
+    supabase
+      .from('sales_orders')
+      .select('id, order_number, client_name, total_amount, status, delivery_date, sales_order_items(product_name, quantity, unit)')
+      .eq('organization_id', orgId)
+      .in('status', ['pending', 'confirmed', 'preparing', 'ready'])
+      .order('created_at', { ascending: false })
+      .limit(5),
   ])
 
-  const batches        = batchesRes.data ?? []
-  const orders         = ordersRes.data ?? []
-  const stockAlerts    = stockAlertsRes.data ?? []
+  const batches         = batchesRes.data ?? []
+  const completedToday  = completedTodayRes.data ?? []
+  const orders          = ordersRes.data ?? []
+  const stockAlerts     = stockAlertsRes.data ?? []
   const recentMovements = recentMovementsRes.data ?? []
-  // Estado general del sistema
-  const systemStatus: 'ok' | 'warning' = (stockAlerts.length > 0 || orders.length > 0) ? 'warning' : 'ok'
+  const pedidos         = pedidosRes.data ?? []
+  const kgHoy = completedToday.reduce((sum, b) => sum + (b.quantity_kg ?? 0), 0)
+  const systemStatus: 'ok' | 'warning' = (stockAlerts.length > 0 || orders.length > 0 || pedidos.length > 0) ? 'warning' : 'ok'
 
   const STATUS_COLORS = {
     ok:      { dot: 'bg-green-500', text: 'text-green-600', label: 'Todo en orden' },
@@ -92,6 +111,24 @@ export default async function InicioPage() {
       bg: stockAlerts.length > 0 ? 'bg-red-50' : 'bg-green-50',
       href: '/inventario',
       sub: stockAlerts.length === 0 ? 'Inventario OK' : stockAlerts.slice(0, 2).map(i => i.name).join(', '),
+    },
+    {
+      label: 'Completados hoy',
+      value: completedToday.length,
+      icon: CheckCheck,
+      color: completedToday.length > 0 ? 'text-emerald-600' : 'text-muted-foreground',
+      bg: completedToday.length > 0 ? 'bg-emerald-50' : 'bg-muted',
+      href: '/produccion',
+      sub: completedToday.length === 0 ? 'Sin completar hoy' : `${formatNumber(kgHoy, 1)} kg totales`,
+    },
+    {
+      label: 'Pedidos activos',
+      value: pedidos.length,
+      icon: ShoppingBag,
+      color: pedidos.length > 0 ? 'text-orange-600' : 'text-green-600',
+      bg: pedidos.length > 0 ? 'bg-orange-50' : 'bg-green-50',
+      href: '/pedidos',
+      sub: pedidos.length === 0 ? 'Sin pedidos pendientes' : `${pedidos.filter(p => p.status === 'pending').length} sin confirmar`,
     },
   ]
 
@@ -226,6 +263,39 @@ export default async function InicioPage() {
         </Card>
 
       </div>
+
+      {/* Pedidos de clientes activos */}
+      {pedidos.length > 0 && (
+        <Card className="border-orange-200 bg-orange-50">
+          <CardContent className="pt-5 pb-4">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-sm font-semibold text-orange-700 flex items-center gap-2">
+                <ShoppingBag className="h-4 w-4" /> Pedidos activos
+              </p>
+              <Link href="/pedidos" className="text-xs text-orange-700 font-medium hover:underline flex items-center gap-1">
+                Ver todos <ArrowRight className="h-3 w-3" />
+              </Link>
+            </div>
+            <div className="space-y-1.5">
+              {pedidos.map(p => {
+                const items = p.sales_order_items as { product_name: string; quantity: number; unit: string }[] | null
+                const STATUS: Record<string, string> = { pending: 'Sin confirmar', confirmed: 'Confirmado', preparing: 'Preparando', ready: 'Listo' }
+                return (
+                  <div key={p.id} className="flex items-center justify-between text-xs text-orange-800">
+                    <div>
+                      <span className="font-medium">{p.client_name}</span>
+                      <span className="text-orange-600 ml-2">
+                        {items?.slice(0, 2).map(i => `${i.product_name} ${formatNumber(i.quantity, 1)}${i.unit}`).join(', ')}
+                      </span>
+                    </div>
+                    <span className="text-orange-600">{STATUS[p.status] ?? p.status}</span>
+                  </div>
+                )
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Órdenes que necesitan atención */}
       {orders.filter(o => o.status === 'sent').length > 0 && (

@@ -1,9 +1,12 @@
 import { getAuthContext } from '@/lib/supabase/helpers'
+import { createClient as createAdmin } from '@supabase/supabase-js'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ConfigPanel } from '@/components/modules/configuracion/config-panel'
 import { EditOrganizationForm } from '@/components/modules/configuracion/edit-organization-form'
 import { PlanSelector } from '@/components/modules/configuracion/plan-selector'
+import { FiscalConfigForm } from '@/components/modules/configuracion/fiscal-config-form'
 import { INDUSTRIES } from '@/lib/industries'
+import type { FiscalConfig } from '@/lib/integrations/tusfacturas'
 
 const PLAN_LABELS: Record<string, string> = {
   free:       'Gratuito',
@@ -23,6 +26,18 @@ export default async function ConfiguracionPage() {
 
   const { organization, profile } = ctx
   const isAdmin = profile.role === 'admin'
+
+  // Leer fiscal_config via admin (campos sensibles no expuestos a RLS)
+  const supabaseAdmin = createAdmin(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+  const { data: orgData } = await supabaseAdmin
+    .from('organizations')
+    .select('fiscal_config')
+    .eq('id', organization.id)
+    .single()
+  const fiscalConfig = (orgData?.fiscal_config ?? {}) as Partial<FiscalConfig>
 
   return (
     <div className="p-8 space-y-8">
@@ -77,6 +92,17 @@ export default async function ConfiguracionPage() {
             orgId={organization.id}
             orgName={organization.name}
             initialConfig={organization.industry_config ?? {}}
+          />
+
+          <div>
+            <h2 className="text-lg font-semibold">Facturación electrónica</h2>
+            <p className="text-muted-foreground text-sm mt-1">
+              Configurá los datos fiscales para emitir comprobantes AFIP desde los pedidos de clientes.
+            </p>
+          </div>
+          <FiscalConfigForm
+            orgId={organization.id}
+            initialConfig={fiscalConfig}
           />
         </>
       ) : (

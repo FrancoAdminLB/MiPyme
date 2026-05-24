@@ -6,6 +6,12 @@ import { createClient } from '@/lib/supabase/client'
 import { CheckCircle, XCircle } from 'lucide-react'
 import type { IndustryConfig, CustomField } from '@/types'
 
+interface BatchInput {
+  item_id: string
+  quantity_used: number
+  inventory_items?: { name: string; unit: string } | null
+}
+
 interface BatchStatusButtonProps {
   batchId: string
   currentStatus: string
@@ -13,6 +19,7 @@ interface BatchStatusButtonProps {
   quantityKg: number
   customData?: Record<string, unknown>
   config?: IndustryConfig
+  batchInputs?: BatchInput[]
 }
 
 function getMissingRequiredFields(customData: Record<string, unknown>, config: IndustryConfig): string[] {
@@ -36,7 +43,7 @@ function getOutOfRangeFields(customData: Record<string, unknown>, config: Indust
     .map(f => f.label)
 }
 
-export function BatchStatusButton({ batchId, currentStatus, productName, quantityKg, customData, config }: BatchStatusButtonProps) {
+export function BatchStatusButton({ batchId, currentStatus, productName, quantityKg, customData, config, batchInputs }: BatchStatusButtonProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
 
@@ -69,17 +76,34 @@ export function BatchStatusButton({ batchId, currentStatus, productName, quantit
       .update({ status: newStatus, end_date: new Date().toISOString().split('T')[0] })
       .eq('id', batchId)
 
-    // Automatización: al completar, registrar el producto terminado en inventario
+    // Automatización: al completar, registrar movimientos de inventario
     if (newStatus === 'completed' && user) {
       const { data: profile } = await supabase
         .from('profiles').select('organization_id').eq('id', user.id).single()
 
       if (profile) {
-        // Buscar ítem de producto terminado con ese nombre
+        const orgId = profile.organization_id
+
+        // 1. Descontar insumos (materia prima) usados
+        if (batchInputs && batchInputs.length > 0) {
+          await Promise.all(batchInputs.map(input =>
+            supabase.from('inventory_movements').insert({
+              organization_id: orgId,
+              item_id: input.item_id,
+              movement_type: 'salida',
+              quantity: input.quantity_used,
+              reference: `LOTE-${batchId}`,
+              notes: `Insumo usado — ${productName}`,
+              created_by: user.id,
+            })
+          ))
+        }
+
+        // 2. Registrar entrada de producto terminado
         const { data: items } = await supabase
           .from('inventory_items')
           .select('id')
-          .eq('organization_id', profile.organization_id)
+          .eq('organization_id', orgId)
           .eq('category', 'producto_terminado')
           .ilike('name', productName)
           .limit(1)
@@ -87,9 +111,8 @@ export function BatchStatusButton({ batchId, currentStatus, productName, quantit
         const itemId = items?.[0]?.id
 
         if (itemId) {
-          // Existe: registrar entrada automática
           await supabase.from('inventory_movements').insert({
-            organization_id: profile.organization_id,
+            organization_id: orgId,
             item_id: itemId,
             movement_type: 'entrada',
             quantity: quantityKg,
@@ -98,11 +121,10 @@ export function BatchStatusButton({ batchId, currentStatus, productName, quantit
             created_by: user.id,
           })
         } else {
-          // No existe: crear el ítem y registrar la entrada
           const { data: newItem } = await supabase
             .from('inventory_items')
             .insert({
-              organization_id: profile.organization_id,
+              organization_id: orgId,
               name: productName,
               category: 'producto_terminado',
               unit: 'kg',
@@ -114,7 +136,7 @@ export function BatchStatusButton({ batchId, currentStatus, productName, quantit
 
           if (newItem) {
             await supabase.from('inventory_movements').insert({
-              organization_id: profile.organization_id,
+              organization_id: orgId,
               item_id: newItem.id,
               movement_type: 'entrada',
               quantity: quantityKg,

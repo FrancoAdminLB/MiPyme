@@ -1,52 +1,49 @@
 'use client'
 
-import { useEffect, useState, Suspense } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
-function CallbackHandler() {
+export default function CallbackPage() {
   const router = useRouter()
-  const searchParams = useSearchParams()
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
   useEffect(() => {
-    const code = searchParams.get('code')
-    const next = searchParams.get('next') ?? '/nueva-contrasena'
-
-    if (!code) {
-      setErrorMsg('No se recibió código en la URL')
-      return
-    }
-
     const supabase = createClient()
 
-    supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
-      if (error) {
-        setErrorMsg(`Error: ${error.message} (status: ${error.status})`)
-      } else {
-        router.replace(next)
+    // Implicit flow: Supabase parses the URL hash and fires PASSWORD_RECOVERY
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN') {
+        subscription.unsubscribe()
+        router.replace('/nueva-contrasena')
       }
     })
-  }, [router, searchParams])
+
+    const timeout = setTimeout(() => {
+      setErrorMsg('El link expiró o ya fue usado. Solicitá uno nuevo.')
+      subscription.unsubscribe()
+    }, 6000)
+
+    return () => {
+      subscription.unsubscribe()
+      clearTimeout(timeout)
+    }
+  }, [router])
 
   if (errorMsg) {
     return (
-      <div className="space-y-3 text-center">
-        <p className="text-sm text-destructive">{errorMsg}</p>
-        <a href="/recuperar" className="text-sm text-primary underline">Solicitar nuevo link</a>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="space-y-3 text-center">
+          <p className="text-sm text-destructive">{errorMsg}</p>
+          <a href="/recuperar" className="text-sm text-primary underline">Solicitar nuevo link</a>
+        </div>
       </div>
     )
   }
 
-  return <p className="text-sm text-muted-foreground">Verificando link...</p>
-}
-
-export default function CallbackPage() {
   return (
     <div className="min-h-screen flex items-center justify-center">
-      <Suspense fallback={<p className="text-sm text-muted-foreground">Cargando...</p>}>
-        <CallbackHandler />
-      </Suspense>
+      <p className="text-sm text-muted-foreground">Verificando link...</p>
     </div>
   )
 }
