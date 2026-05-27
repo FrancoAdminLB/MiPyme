@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { CheckCircle, XCircle } from 'lucide-react'
+import { toast } from 'sonner'
 import type { IndustryConfig, CustomField } from '@/types'
 
 interface BatchStatusButtonProps {
@@ -216,6 +217,8 @@ export function BatchStatusButton({ batchId, currentStatus, productName, quantit
       }
     }
 
+    if (newStatus === 'completed') toast.success(`Lote completado — ${productName}`)
+    else toast.success('Lote cancelado')
     router.refresh()
     setLoading(false)
   }

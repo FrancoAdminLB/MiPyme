@@ -247,6 +247,22 @@ export function BatchesTable({ batches, items, inputs, config, inputLabel, outpu
                 )
               })}
             </tbody>
+            {filtered.length > 1 && (() => {
+              const totalOutput   = filtered.reduce((s, b) => s + (b.quantity_kg as number || 0), 0)
+              const totalInput    = filtered.reduce((s, b) => s + (b.input_quantity as number || 0), 0)
+              const avgYield      = filtered.reduce((s, b) => s + (b.yield_percentage as number || 0), 0) / filtered.length
+              return (
+                <tfoot>
+                  <tr className="border-t-2 border-border bg-muted/30 text-xs font-semibold text-muted-foreground">
+                    <td className="pt-2 pb-2 pr-4" colSpan={2}>Total ({filtered.length} lotes)</td>
+                    <td className="pt-2 pb-2 pr-4 text-right text-foreground">{formatNumber(totalOutput, 1)}</td>
+                    <td className="pt-2 pb-2 pr-4 text-right text-foreground">{formatNumber(totalInput, 0)}</td>
+                    <td className="pt-2 pb-2 pr-4 text-right text-foreground">{formatNumber(avgYield, 2)}%</td>
+                    <td colSpan={4} />
+                  </tr>
+                </tfoot>
+              )
+            })()}
           </table>
         </div>
       )}

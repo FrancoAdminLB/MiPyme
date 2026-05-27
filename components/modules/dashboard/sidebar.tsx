@@ -63,17 +63,19 @@ export function Sidebar({ organization, pendingOrders, pendingPedidos, isSuperAd
   return (
     <aside className="flex flex-col w-64 min-h-screen border-r bg-card">
       {/* Logo / Org name */}
-      <div className="px-4 py-4 border-b space-y-2">
-        <p className="text-xs text-muted-foreground uppercase tracking-wider px-2">MiPyme</p>
+      <div className="px-4 py-4 border-b">
         {isSuperAdmin && allOrgs && allOrgs.length > 1 ? (
-          <>
+          <div className="space-y-2">
             <OrgSwitcher currentOrgId={activeOrgId ?? organization.id} orgs={allOrgs} />
             <p className="text-[10px] text-amber-600 bg-amber-50 rounded px-2 py-0.5 text-center font-medium">
               Super Admin
             </p>
-          </>
+          </div>
         ) : (
-          <p className="font-semibold text-sm truncate px-2">{organization.name}</p>
+          <div className="px-2">
+            <p className="font-bold text-sm truncate">{organization.name}</p>
+            <p className="text-[11px] text-muted-foreground truncate capitalize">{organization.industry?.replace('_', ' ')}</p>
+          </div>
         )}
       </div>
 

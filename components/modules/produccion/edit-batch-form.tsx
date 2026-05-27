@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Pencil, X } from 'lucide-react'
+import { toast } from 'sonner'
 import type { IndustryConfig } from '@/types'
 
 interface Batch {
@@ -75,6 +76,7 @@ export function EditBatchForm({ batch, config }: EditBatchFormProps) {
       .eq('id', batch.id)
 
     if (error) { setError(error.message); setLoading(false); return }
+    toast.success('Lote actualizado')
     setOpen(false)
     router.refresh()
     setLoading(false)

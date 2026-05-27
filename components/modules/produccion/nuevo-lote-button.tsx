@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Plus, X } from 'lucide-react'
+import { toast } from 'sonner'
 import type { IndustryConfig, CustomField, ProductionBatch } from '@/types'
 
 function getCompliance(value: string, field: CustomField): 'ok' | 'out' | null {
@@ -38,7 +39,6 @@ export function NuevoLoteButton({ config, batches = [], pendingOrders }: NuevoLo
   const router = useRouter()
   const [open, setOpen]       = useState(false)
   const [loading, setLoading] = useState(false)
-  const [saved, setSaved]     = useState(false)
   const [error, setError]     = useState<string | null>(null)
   const [form, setForm]       = useState({
     batch_code:     '',
@@ -173,9 +173,10 @@ export function NuevoLoteButton({ config, batches = [], pendingOrders }: NuevoLo
       return
     }
 
-    setSaved(true)
+    toast.success('Lote guardado correctamente')
+    setOpen(false)
+    resetForm()
     router.refresh()
-    setTimeout(() => { setOpen(false); resetForm(); setSaved(false) }, 900)
     setLoading(false)
   }
 
@@ -397,8 +398,8 @@ export function NuevoLoteButton({ config, batches = [], pendingOrders }: NuevoLo
           {/* Footer */}
           <div className="flex justify-end gap-3 px-6 py-4 border-t shrink-0">
             <Button type="button" variant="outline" onClick={() => { setOpen(false); resetForm() }}>Cancelar</Button>
-            <Button type="submit" disabled={loading || saved}>
-              {saved ? '¡Lote guardado!' : loading ? 'Guardando...' : 'Guardar lote'}
+            <Button type="submit" disabled={loading}>
+              {loading ? 'Guardando...' : 'Guardar lote'}
             </Button>
           </div>
         </form>

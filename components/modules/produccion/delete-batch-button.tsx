@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Trash2 } from 'lucide-react'
+import { toast } from 'sonner'
 
 interface DeleteBatchButtonProps {
   batchId: string
@@ -19,6 +20,7 @@ export function DeleteBatchButton({ batchId, batchCode }: DeleteBatchButtonProps
     setLoading(true)
     const supabase = createClient()
     await supabase.from('production_batches').delete().eq('id', batchId)
+    toast.success(`Lote ${batchCode} eliminado`)
     router.refresh()
     setLoading(false)
   }
