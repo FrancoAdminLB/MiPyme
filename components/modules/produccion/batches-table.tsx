@@ -42,7 +42,7 @@ function buildAvgYield(batches: Record<string, unknown>[]): Map<string, number> 
     map.set(p, { sum: cur.sum + y, count: cur.count + 1 })
   }
   const result = new Map<string, number>()
-  for (const [product, { sum, count }] of map) {
+  for (const [product, { sum, count }] of Array.from(map.entries())) {
     result.set(product, sum / count)
   }
   return result
