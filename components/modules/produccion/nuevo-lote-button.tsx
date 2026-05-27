@@ -81,6 +81,22 @@ export function NuevoLoteButton({ config, batches = [], pendingOrders }: NuevoLo
 
   const lastValues = (lastBatch?.custom_data ?? {}) as Record<string, string>
 
+  // Valores históricos únicos por campo (de todos los lotes del mismo producto)
+  const historicalFieldValues = useMemo(() => {
+    if (!form.product_name) return {} as Record<string, string[]>
+    const result: Record<string, string[]> = {}
+    const productBatches = batches.filter(b => b.product_name === form.product_name)
+    for (const batch of productBatches) {
+      const data = (batch.custom_data ?? {}) as Record<string, string>
+      for (const [key, val] of Object.entries(data)) {
+        if (!val || val === '' || key === 'etapa' || key === 'responsable') continue
+        if (!result[key]) result[key] = []
+        if (!result[key]!.includes(String(val))) result[key]!.push(String(val))
+      }
+    }
+    return result
+  }, [batches, form.product_name])
+
   function handleOpen() {
     setForm(prev => ({
       ...prev,
@@ -339,11 +355,24 @@ export function NuevoLoteButton({ config, batches = [], pendingOrders }: NuevoLo
                         </div>
                       )}
 
-                      {/* Referencia al último lote */}
-                      {lastValues[field.key] && (
-                        <p className="text-[10px] text-muted-foreground leading-tight">
-                          Ant: <span className="font-medium">{lastValues[field.key]}</span>
-                        </p>
+                      {/* Chips de valores históricos */}
+                      {(historicalFieldValues[field.key]?.length ?? 0) > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {historicalFieldValues[field.key]!.slice(0, 4).map(val => (
+                            <button
+                              key={val}
+                              type="button"
+                              onClick={() => handleCustomChange(field.key, val)}
+                              className={`text-[10px] px-2 py-0.5 rounded-full border transition-colors ${
+                                customData[field.key] === val
+                                  ? 'bg-primary text-primary-foreground border-primary'
+                                  : 'bg-muted/60 border-input text-muted-foreground hover:border-primary hover:text-primary'
+                              }`}
+                            >
+                              {val}
+                            </button>
+                          ))}
+                        </div>
                       )}
 
                       {field.compliance_ref && customData[field.key] && (
