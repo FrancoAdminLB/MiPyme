@@ -7,7 +7,7 @@ import { ProductTemplatesWizard } from '@/components/modules/produccion/product-
 import { BatchesTable } from '@/components/modules/produccion/batches-table'
 import { AreaSetupBanner } from '@/components/modules/configuracion/area-setup-banner'
 import Link from 'next/link'
-import { Printer, AlertCircle, PackageSearch } from 'lucide-react'
+import { Printer, PackageSearch } from 'lucide-react'
 
 export default async function ProduccionPage() {
   const ctx = await getAuthContext()

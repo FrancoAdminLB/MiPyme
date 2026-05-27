@@ -6,12 +6,6 @@ import { createClient } from '@/lib/supabase/client'
 import { CheckCircle, XCircle } from 'lucide-react'
 import type { IndustryConfig, CustomField } from '@/types'
 
-interface BatchInput {
-  item_id: string
-  quantity_used: number
-  inventory_items?: { name: string; unit: string } | null
-}
-
 interface BatchStatusButtonProps {
   batchId: string
   currentStatus: string
@@ -21,7 +15,6 @@ interface BatchStatusButtonProps {
   historicalAvgYield?: number | null
   customData?: Record<string, unknown>
   config?: IndustryConfig
-  batchInputs?: BatchInput[]
 }
 
 function getMissingRequiredFields(customData: Record<string, unknown>, config: IndustryConfig): string[] {
@@ -45,7 +38,7 @@ function getOutOfRangeFields(customData: Record<string, unknown>, config: Indust
     .map(f => f.label)
 }
 
-export function BatchStatusButton({ batchId, currentStatus, productName, quantityKg, inputQuantity, historicalAvgYield, customData, config, batchInputs }: BatchStatusButtonProps) {
+export function BatchStatusButton({ batchId, currentStatus, productName, quantityKg, inputQuantity, historicalAvgYield, customData, config }: BatchStatusButtonProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
 

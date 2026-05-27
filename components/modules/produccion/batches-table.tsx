@@ -239,7 +239,6 @@ export function BatchesTable({ batches, items, inputs, config, inputLabel, outpu
                           historicalAvgYield={avgYieldByProduct.get(b.product_name as string) ?? null}
                           customData={b.custom_data as Record<string, unknown> | undefined}
                           config={config}
-                          batchInputs={batchInputs as never}
                         />
                         <DeleteBatchButton batchId={b.id as string} batchCode={b.batch_code as string} />
                       </div>
