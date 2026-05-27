@@ -87,6 +87,7 @@ export interface CustomField {
   unit?: string
   options?: string[]
   required?: boolean
+  hidden?: boolean        // Si true, no se muestra en el formulario de lote
   stage?: string          // Si está definido, solo se muestra cuando la etapa coincide
   min_value?: number      // Límite mínimo reglamentario
   max_value?: number      // Límite máximo reglamentario

@@ -10,15 +10,32 @@ import { INDUSTRIES, INDUSTRY_GROUPS } from '@/lib/industries'
 import type { Organization, Profile, Industry, CompanySize } from '@/types'
 import { CheckCircle, ChevronRight, Plus, Trash2 } from 'lucide-react'
 
+interface SupplierInput {
+  name: string
+  cuit: string
+  category: string
+  contact_name: string
+  notes: string
+}
+
 interface InventoryItem {
   name: string
   unit: string
   current_stock: string
   min_stock: string
   category: string
+  supplier_name: string
 }
 
-const STEPS = ['Producción', 'Inventario', 'Listo']
+const STEPS = ['Producción', 'Proveedores', 'Inventario', 'Listo']
+
+const SUPPLIER_CATEGORIES = [
+  { value: 'materia_prima', label: 'Materia prima' },
+  { value: 'insumo',        label: 'Insumos' },
+  { value: 'empaque',       label: 'Empaque / packaging' },
+  { value: 'servicios',     label: 'Servicios' },
+  { value: 'otros',         label: 'Otros' },
+]
 
 export function OnboardingWizard({
   organization,
@@ -52,39 +69,18 @@ export function OnboardingWizard({
     }
   }
 
-  function addSuggestedItem(s: { name: string; unit: string; category: string; min_stock: number }) {
-    setItems(prev => [...prev, {
-      name: s.name,
-      unit: s.unit,
-      current_stock: '',
-      min_stock: String(s.min_stock),
-      category: s.category,
-    }])
-  }
-
-  function isSuggestionAdded(name: string) {
-    return items.some(i => i.name === name)
-  }
-
-  // Paso 1 — Configurar producción
+  // ── Paso 0 — Producción ──────────────────────────────────────────
   const [inputLabel, setInputLabel] = useState(defaultConfig?.input_label ?? '')
   const [outputLabel, setOutputLabel] = useState(defaultConfig?.output_label ?? '')
   const [productTypes, setProductTypes] = useState<string[]>(
     defaultConfig?.product_types?.length ? defaultConfig.product_types : ['']
   )
-
-  // Responsable y alertas
   const [responsableProduccion, setResponsableProduccion] = useState(
     organization.industry_config?.area_responsables?.produccion ?? ''
   )
   const [notificationPhone, setNotificationPhone] = useState('')
 
-  // Paso 2 — Inventario inicial
-  const [items, setItems] = useState<InventoryItem[]>([])
-
-  function addProductType() {
-    setProductTypes(p => [...p, ''])
-  }
+  function addProductType() { setProductTypes(p => [...p, '']) }
   function updateProductType(i: number, val: string) {
     setProductTypes(p => p.map((v, idx) => (idx === i ? val : v)))
   }
@@ -92,8 +88,33 @@ export function OnboardingWizard({
     setProductTypes(p => p.filter((_, idx) => idx !== i))
   }
 
+  // ── Paso 1 — Proveedores ─────────────────────────────────────────
+  const [suppliers, setSuppliers] = useState<SupplierInput[]>([])
+
+  function addSupplier() {
+    setSuppliers(p => [...p, { name: '', cuit: '', category: 'materia_prima', contact_name: '', notes: '' }])
+  }
+  function updateSupplier(i: number, field: keyof SupplierInput, val: string) {
+    setSuppliers(p => p.map((s, idx) => (idx === i ? { ...s, [field]: val } : s)))
+  }
+  function removeSupplier(i: number) {
+    setSuppliers(p => p.filter((_, idx) => idx !== i))
+  }
+
+  // ── Paso 2 — Inventario ──────────────────────────────────────────
+  const [items, setItems] = useState<InventoryItem[]>([])
+
+  function addSuggestedItem(s: { name: string; unit: string; category: string; min_stock: number }) {
+    setItems(prev => [...prev, {
+      name: s.name, unit: s.unit,
+      current_stock: '', min_stock: String(s.min_stock),
+      category: s.category, supplier_name: '',
+    }])
+  }
+  function isSuggestionAdded(name: string) { return items.some(i => i.name === name) }
+
   function addItem() {
-    setItems(p => [...p, { name: '', unit: '', current_stock: '', min_stock: '', category: 'insumo' }])
+    setItems(p => [...p, { name: '', unit: '', current_stock: '', min_stock: '', category: 'insumo', supplier_name: '' }])
   }
   function updateItem(i: number, field: keyof InventoryItem, val: string) {
     setItems(p => p.map((item, idx) => (idx === i ? { ...item, [field]: val } : item)))
@@ -102,6 +123,7 @@ export function OnboardingWizard({
     setItems(p => p.filter((_, idx) => idx !== i))
   }
 
+  // ── handleComplete ───────────────────────────────────────────────
   async function handleComplete() {
     setLoading(true)
     setError(null)
@@ -118,7 +140,8 @@ export function OnboardingWizard({
       },
     }
 
-    const initialItems = items.filter(i => i.name.trim())
+    const initialItems    = items.filter(i => i.name.trim())
+    const initialSuppliers = suppliers.filter(s => s.name.trim())
 
     const res = await fetch('/api/onboarding/complete', {
       method: 'POST',
@@ -126,6 +149,7 @@ export function OnboardingWizard({
       body: JSON.stringify({
         industryConfig,
         initialItems,
+        initialSuppliers,
         industry: selectedIndustry,
         company_size: companySize,
         notification_phone: notificationPhone || undefined,
@@ -139,10 +163,11 @@ export function OnboardingWizard({
       return
     }
 
-    setStep(2)
+    setStep(3)
     setLoading(false)
   }
 
+  // ── Render ───────────────────────────────────────────────────────
   return (
     <div className="w-full max-w-lg space-y-6">
       {/* Header */}
@@ -168,12 +193,12 @@ export function OnboardingWizard({
               {i < step ? <CheckCircle className="h-4 w-4" /> : i + 1}
             </div>
             <span className={`text-xs ${i === step ? 'font-medium' : 'text-muted-foreground'}`}>{label}</span>
-            {i < STEPS.length - 1 && <div className="w-8 h-px bg-border" />}
+            {i < STEPS.length - 1 && <div className="w-6 h-px bg-border" />}
           </div>
         ))}
       </div>
 
-      {/* Paso 0 — Producción */}
+      {/* ── Paso 0 — Producción ── */}
       {step === 0 && (
         <Card>
           <CardHeader>
@@ -185,10 +210,10 @@ export function OnboardingWizard({
               <Label>Tamaño de empresa</Label>
               <div className="grid grid-cols-2 gap-2">
                 {([
-                  { value: 'micro',   label: 'Microempresa',          desc: 'Hasta 10 empleados' },
-                  { value: 'small',   label: 'Pequeña empresa',       desc: '11 a 50 empleados' },
-                  { value: 'medium',  label: 'Mediana (tramo 1)',      desc: '51 a 200 empleados' },
-                  { value: 'medium2', label: 'Mediana (tramo 2)',      desc: '201 a 590 empleados' },
+                  { value: 'micro',   label: 'Microempresa',      desc: 'Hasta 10 empleados' },
+                  { value: 'small',   label: 'Pequeña empresa',   desc: '11 a 50 empleados' },
+                  { value: 'medium',  label: 'Mediana (tramo 1)', desc: '51 a 200 empleados' },
+                  { value: 'medium2', label: 'Mediana (tramo 2)', desc: '201 a 590 empleados' },
                 ] as { value: CompanySize; label: string; desc: string }[]).map(opt => (
                   <button
                     key={opt.value}
@@ -225,6 +250,7 @@ export function OnboardingWizard({
               </select>
               <p className="text-xs text-muted-foreground">El asistente IA y los campos se adaptan a tu industria</p>
             </div>
+
             <div className="space-y-2">
               <Label>Responsable de producción</Label>
               <Input
@@ -254,15 +280,17 @@ export function OnboardingWizard({
               />
               <p className="text-xs text-muted-foreground">Lo que usás para producir (materia prima principal)</p>
             </div>
+
             <div className="space-y-2">
               <Label>Producto final</Label>
               <Input
-                placeholder={industryMeta?.outputLabel ?? 'Ej: Kg de queso'}
+                placeholder={industryMeta?.outputLabel ?? 'Ej: Kg producidos'}
                 value={outputLabel}
                 onChange={e => setOutputLabel(e.target.value)}
               />
               <p className="text-xs text-muted-foreground">Lo que producís o vendés</p>
             </div>
+
             <div className="space-y-2">
               <Label>Tipos de producto</Label>
               <div className="space-y-2">
@@ -298,8 +326,96 @@ export function OnboardingWizard({
         </Card>
       )}
 
-      {/* Paso 1 — Inventario inicial */}
+      {/* ── Paso 1 — Proveedores ── */}
       {step === 1 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Proveedores</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Registrá tus proveedores habituales. Podés saltear este paso y cargarlos después desde Inventario.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {suppliers.length > 0 && (
+              <div className="space-y-3">
+                {suppliers.map((s, i) => (
+                  <div key={i} className="p-3 rounded-lg border bg-muted/20 space-y-2">
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Nombre del proveedor *"
+                        value={s.name}
+                        onChange={e => updateSupplier(i, 'name', e.target.value)}
+                        className="flex-1"
+                      />
+                      <button type="button" onClick={() => removeSupplier(i)} className="text-muted-foreground hover:text-destructive">
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <select
+                        value={s.category}
+                        onChange={e => updateSupplier(i, 'category', e.target.value)}
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      >
+                        {SUPPLIER_CATEGORIES.map(c => (
+                          <option key={c.value} value={c.value}>{c.label}</option>
+                        ))}
+                      </select>
+                      <Input
+                        placeholder="CUIT (opcional)"
+                        value={s.cuit}
+                        onChange={e => updateSupplier(i, 'cuit', e.target.value)}
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Input
+                        placeholder="Contacto (opcional)"
+                        value={s.contact_name}
+                        onChange={e => updateSupplier(i, 'contact_name', e.target.value)}
+                      />
+                      <Input
+                        placeholder="Notas (opcional)"
+                        value={s.notes}
+                        onChange={e => updateSupplier(i, 'notes', e.target.value)}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {suppliers.length === 0 && (
+              <div className="text-center py-6 text-sm text-muted-foreground border border-dashed rounded-lg">
+                Todavía no agregaste proveedores.
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={addSupplier}
+              className="flex items-center gap-1 text-sm text-primary hover:underline"
+            >
+              <Plus className="h-3.5 w-3.5" /> Agregar proveedor
+            </button>
+          </CardContent>
+          <CardFooter className="flex justify-between">
+            <Button variant="outline" onClick={() => setStep(0)}>
+              Volver
+            </Button>
+            <div className="flex gap-2">
+              <Button variant="ghost" onClick={() => setStep(2)}>
+                Saltear
+              </Button>
+              <Button onClick={() => setStep(2)}>
+                Continuar <ChevronRight className="h-4 w-4 ml-1" />
+              </Button>
+            </div>
+          </CardFooter>
+        </Card>
+      )}
+
+      {/* ── Paso 2 — Inventario ── */}
+      {step === 2 && (
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Inventario inicial</CardTitle>
@@ -343,14 +459,14 @@ export function OnboardingWizard({
               </div>
             )}
 
-            {/* Ítems agregados */}
+            {/* Ítems */}
             {items.length > 0 && (
               <div className="space-y-2">
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Tu inventario</p>
                 <div className="space-y-2">
                   {items.map((item, i) => (
-                    <div key={i} className="grid grid-cols-2 gap-2 p-3 rounded-lg border bg-muted/20">
-                      <div className="col-span-2 flex gap-2">
+                    <div key={i} className="p-3 rounded-lg border bg-muted/20 space-y-2">
+                      <div className="flex gap-2">
                         <Input
                           placeholder="Nombre del ítem"
                           value={item.name}
@@ -361,40 +477,56 @@ export function OnboardingWizard({
                           <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
-                      <Input
-                        placeholder="Unidad (kg, L, u)"
-                        value={item.unit}
-                        onChange={e => updateItem(i, 'unit', e.target.value)}
-                      />
-                      <select
-                        value={item.category}
-                        onChange={e => updateItem(i, 'category', e.target.value)}
-                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                      >
-                        <option value="materia_prima">Materia prima</option>
-                        <option value="insumo">Insumo</option>
-                        <option value="material_empaque">Empaque</option>
-                        <option value="producto_terminado">Producto terminado</option>
-                      </select>
-                      <Input
-                        type="number"
-                        placeholder="Stock actual"
-                        value={item.current_stock}
-                        onChange={e => updateItem(i, 'current_stock', e.target.value)}
-                      />
-                      <Input
-                        type="number"
-                        placeholder="Stock mínimo"
-                        value={item.min_stock}
-                        onChange={e => updateItem(i, 'min_stock', e.target.value)}
-                      />
+                      <div className="grid grid-cols-2 gap-2">
+                        <Input
+                          placeholder="Unidad (kg, L, u)"
+                          value={item.unit}
+                          onChange={e => updateItem(i, 'unit', e.target.value)}
+                        />
+                        <select
+                          value={item.category}
+                          onChange={e => updateItem(i, 'category', e.target.value)}
+                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        >
+                          <option value="materia_prima">Materia prima</option>
+                          <option value="insumo">Insumo</option>
+                          <option value="material_empaque">Empaque</option>
+                          <option value="producto_terminado">Prod. terminado</option>
+                        </select>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <Input
+                          type="number"
+                          placeholder="Stock actual"
+                          value={item.current_stock}
+                          onChange={e => updateItem(i, 'current_stock', e.target.value)}
+                        />
+                        <Input
+                          type="number"
+                          placeholder="Stock mínimo"
+                          value={item.min_stock}
+                          onChange={e => updateItem(i, 'min_stock', e.target.value)}
+                        />
+                      </div>
+                      {/* Proveedor vinculado */}
+                      {suppliers.filter(s => s.name.trim()).length > 0 && (
+                        <select
+                          value={item.supplier_name}
+                          onChange={e => updateItem(i, 'supplier_name', e.target.value)}
+                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        >
+                          <option value="">Sin proveedor</option>
+                          {suppliers.filter(s => s.name.trim()).map(s => (
+                            <option key={s.name} value={s.name}>{s.name}</option>
+                          ))}
+                        </select>
+                      )}
                     </div>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Agregar ítem manual */}
             <button
               type="button"
               onClick={addItem}
@@ -402,11 +534,10 @@ export function OnboardingWizard({
             >
               <Plus className="h-3.5 w-3.5" /> Agregar ítem propio
             </button>
-
           </CardContent>
           <CardFooter className="flex justify-between">
             <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setStep(0)} disabled={loading}>
+              <Button variant="outline" onClick={() => setStep(1)} disabled={loading}>
                 Volver
               </Button>
               <Button variant="ghost" onClick={handleComplete} disabled={loading}>
@@ -421,8 +552,8 @@ export function OnboardingWizard({
         </Card>
       )}
 
-      {/* Paso 2 — Listo */}
-      {step === 2 && (
+      {/* ── Paso 3 — Listo ── */}
+      {step === 3 && (
         <Card>
           <CardContent className="pt-10 pb-8 text-center space-y-4">
             <div className="flex justify-center">
@@ -453,6 +584,9 @@ export function OnboardingWizard({
               )}
               {notificationPhone.trim() && (
                 <p>✓ Alertas WhatsApp: <span className="font-medium">{notificationPhone.trim()}</span></p>
+              )}
+              {suppliers.filter(s => s.name.trim()).length > 0 && (
+                <p>✓ {suppliers.filter(s => s.name.trim()).length} proveedor{suppliers.filter(s => s.name.trim()).length !== 1 ? 'es' : ''} cargado{suppliers.filter(s => s.name.trim()).length !== 1 ? 's' : ''}</p>
               )}
               {items.filter(i => i.name.trim()).length > 0 && (
                 <p>✓ {items.filter(i => i.name.trim()).length} ítems de inventario cargados</p>

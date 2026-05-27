@@ -60,8 +60,8 @@ export function NuevoLoteButton({ config, batches = [], pendingOrders }: NuevoLo
   const allFields    = config.custom_fields ?? []
 
   const visibleFields: CustomField[] = stages.length > 0
-    ? allFields.filter(f => !f.stage || f.stage === selectedStage)
-    : allFields
+    ? allFields.filter(f => !f.hidden && (!f.stage || f.stage === selectedStage))
+    : allFields.filter(f => !f.hidden)
 
   // Rendimiento en tiempo real
   const liveYield = useMemo(() => {
@@ -78,8 +78,6 @@ export function NuevoLoteButton({ config, batches = [], pendingOrders }: NuevoLo
       .filter(b => b.product_name === form.product_name)
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0] ?? null
   }, [batches, form.product_name])
-
-  const lastValues = (lastBatch?.custom_data ?? {}) as Record<string, string>
 
   // Valores históricos únicos por campo (de todos los lotes del mismo producto)
   const historicalFieldValues = useMemo(() => {

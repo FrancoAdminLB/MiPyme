@@ -53,7 +53,7 @@ export function BatchDetailButton({ batch, config }: BatchDetailButtonProps) {
   // Campos del detalle: agrupados por etapa
   const fieldsByStage: Record<string, { field: CustomField; value: unknown }[]> = {}
   for (const stage of stages) {
-    const stageFields = allFields.filter(f => f.stage === stage)
+    const stageFields = allFields.filter(f => f.stage === stage && !f.hidden)
     const withValues = stageFields
       .map(f => ({ field: f, value: customData[f.key] }))
       .filter(({ value }) => value !== undefined && value !== '' && value !== null)
@@ -62,7 +62,7 @@ export function BatchDetailButton({ batch, config }: BatchDetailButtonProps) {
 
   // Campos del formulario de la próxima etapa
   const nextStageFields = nextStage
-    ? allFields.filter(f => f.stage === nextStage)
+    ? allFields.filter(f => f.stage === nextStage && !f.hidden)
     : []
 
   function openAdvance() {
