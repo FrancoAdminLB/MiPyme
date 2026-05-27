@@ -84,22 +84,10 @@ export function BatchStatusButton({ batchId, currentStatus, productName, quantit
       if (profile) {
         const orgId = profile.organization_id
 
-        // 1. Descontar insumos (materia prima) usados
-        if (batchInputs && batchInputs.length > 0) {
-          await Promise.all(batchInputs.map(input =>
-            supabase.from('inventory_movements').insert({
-              organization_id: orgId,
-              item_id: input.item_id,
-              movement_type: 'salida',
-              quantity: input.quantity_used,
-              reference: `LOTE-${batchId}`,
-              notes: `Insumo usado — ${productName}`,
-              created_by: user.id,
-            })
-          ))
-        }
+        // Los insumos ya se descontaron al registrarlos en batch-inputs-form.
+        // Al completar solo se registra la entrada del producto terminado.
 
-        // 2. Registrar movimientos de producto terminado
+        // Registrar movimientos de producto terminado
         const esPorcionado = customData?.tipo_presentacion === 'Porcionado'
 
         if (esPorcionado) {

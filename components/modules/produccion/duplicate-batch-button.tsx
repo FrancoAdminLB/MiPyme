@@ -127,7 +127,7 @@ export function DuplicateBatchButton({ batch }: DuplicateBatchButtonProps) {
             />
           </div>
           <p className="text-xs text-muted-foreground">
-            Se copian producto, cantidades, insumos y todos los campos del lote original. El estado se inicia en <span className="font-medium">En proceso</span>.
+            Se copian producto, cantidades y campos del lote original. Los insumos se registran por separado. El estado se inicia en <span className="font-medium">En proceso</span>.
           </p>
           {error && <p className="text-sm text-destructive">{error}</p>}
         </div>

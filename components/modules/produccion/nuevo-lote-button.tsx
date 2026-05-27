@@ -133,18 +133,23 @@ export function NuevoLoteButton({ config, batches = [] }: NuevoLoteButtonProps) 
       ...(form.responsable ? { responsable: form.responsable } : {}),
     }
 
+    const qtyKg    = parseFloat(form.quantity_kg)    || 0
+    const qtyInput = parseFloat(form.input_quantity) || 0
+    const yieldPct = qtyInput > 0 ? (qtyKg / qtyInput) * 100 : 0
+
     const { error } = await supabase.from('production_batches').insert({
-      organization_id: profile.organization_id,
-      batch_code:      form.batch_code,
-      product_name:    form.product_name,
-      product_type:    form.product_name,
-      quantity_kg:     parseFloat(form.quantity_kg)      || 0,
-      input_quantity:  parseFloat(form.input_quantity)   || 0,
-      start_date:      form.start_date,
-      notes:           form.notes || null,
-      status:          'in_progress',
-      custom_data:     finalCustomData,
-      created_by:      user.id,
+      organization_id:  profile.organization_id,
+      batch_code:       form.batch_code,
+      product_name:     form.product_name,
+      product_type:     form.product_name,
+      quantity_kg:      qtyKg,
+      input_quantity:   qtyInput,
+      yield_percentage: yieldPct,
+      start_date:       form.start_date,
+      notes:            form.notes || null,
+      status:           'in_progress',
+      custom_data:      finalCustomData,
+      created_by:       user.id,
     })
 
     if (error) {
