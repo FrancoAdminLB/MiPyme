@@ -21,7 +21,7 @@ export async function POST(req: Request) {
   if (!profile) return NextResponse.json({ error: 'Perfil no encontrado' }, { status: 404 })
 
   const body = await req.json()
-  const { industryConfig, industry, company_size } = body
+  const { industryConfig, industry, company_size, notification_phone } = body
   const initialItems: unknown[] = Array.isArray(body.initialItems) ? body.initialItems.slice(0, 50) : []
 
   if (!industryConfig || typeof industryConfig !== 'object') {
@@ -37,6 +37,9 @@ export async function POST(req: Request) {
   }
   if (industry) updates.industry = industry
   if (company_size && VALID_SIZES.includes(String(company_size))) updates.company_size = company_size
+  if (notification_phone && typeof notification_phone === 'string') {
+    updates.notification_phone = notification_phone.trim().slice(0, 30)
+  }
 
   const { error: orgError } = await supabaseAdmin
     .from('organizations')

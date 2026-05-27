@@ -73,6 +73,12 @@ export function OnboardingWizard({
     defaultConfig?.product_types?.length ? defaultConfig.product_types : ['']
   )
 
+  // Responsable y alertas
+  const [responsableProduccion, setResponsableProduccion] = useState(
+    organization.industry_config?.area_responsables?.produccion ?? ''
+  )
+  const [notificationPhone, setNotificationPhone] = useState('')
+
   // Paso 2 — Inventario inicial
   const [items, setItems] = useState<InventoryItem[]>([])
 
@@ -105,8 +111,11 @@ export function OnboardingWizard({
       input_label: inputLabel,
       output_label: outputLabel,
       product_types: productTypes.filter(t => t.trim()),
-      // Siempre incluir los campos de producción de la industria seleccionada
       custom_fields: INDUSTRIES[selectedIndustry]?.defaultConfig.custom_fields ?? defaultConfig?.custom_fields ?? [],
+      area_responsables: {
+        ...(defaultConfig?.area_responsables ?? {}),
+        ...(responsableProduccion.trim() ? { produccion: responsableProduccion.trim() } : {}),
+      },
     }
 
     const initialItems = items.filter(i => i.name.trim())
@@ -114,7 +123,13 @@ export function OnboardingWizard({
     const res = await fetch('/api/onboarding/complete', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ industryConfig, initialItems, industry: selectedIndustry, company_size: companySize }),
+      body: JSON.stringify({
+        industryConfig,
+        initialItems,
+        industry: selectedIndustry,
+        company_size: companySize,
+        notification_phone: notificationPhone || undefined,
+      }),
     })
 
     const data = await res.json()
@@ -210,6 +225,26 @@ export function OnboardingWizard({
               </select>
               <p className="text-xs text-muted-foreground">El asistente IA y los campos se adaptan a tu industria</p>
             </div>
+            <div className="space-y-2">
+              <Label>Responsable de producción</Label>
+              <Input
+                placeholder="Nombre del encargado de producción"
+                value={responsableProduccion}
+                onChange={e => setResponsableProduccion(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">Se pre-carga automáticamente al registrar cada lote</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Teléfono para alertas WhatsApp</Label>
+              <Input
+                placeholder="+5491123456789"
+                value={notificationPhone}
+                onChange={e => setNotificationPhone(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">Recibís notificaciones de stock bajo y alertas críticas (opcional)</p>
+            </div>
+
             <div className="space-y-2">
               <Label>Insumo principal</Label>
               <Input
@@ -412,6 +447,12 @@ export function OnboardingWizard({
               <p>✓ Producto: <span className="font-medium">{outputLabel || industryMeta?.outputLabel}</span></p>
               {productTypes.filter(t => t.trim()).length > 0 && (
                 <p>✓ Tipos: <span className="font-medium">{productTypes.filter(t => t.trim()).join(', ')}</span></p>
+              )}
+              {responsableProduccion.trim() && (
+                <p>✓ Responsable: <span className="font-medium">{responsableProduccion.trim()}</span></p>
+              )}
+              {notificationPhone.trim() && (
+                <p>✓ Alertas WhatsApp: <span className="font-medium">{notificationPhone.trim()}</span></p>
               )}
               {items.filter(i => i.name.trim()).length > 0 && (
                 <p>✓ {items.filter(i => i.name.trim()).length} ítems de inventario cargados</p>
