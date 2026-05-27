@@ -1,6 +1,8 @@
 import { getAuthContext } from '@/lib/supabase/helpers'
 import { createClient as createAdmin } from '@supabase/supabase-js'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { AlertCircle } from 'lucide-react'
+import Link from 'next/link'
 import { ConfigPanel } from '@/components/modules/configuracion/config-panel'
 import { EditOrganizationForm } from '@/components/modules/configuracion/edit-organization-form'
 import { PlanSelector } from '@/components/modules/configuracion/plan-selector'
@@ -48,6 +50,29 @@ export default async function ConfiguracionPage() {
         </p>
       </div>
 
+      {/* Banner configuración incompleta */}
+      {(!organization.onboarding_completed || !organization.company_size) && isAdmin && (
+        <Card className="border-amber-200 bg-amber-50">
+          <CardContent className="py-4 flex items-center justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-medium text-amber-800">Configuración inicial incompleta</p>
+                <p className="text-xs text-amber-700 mt-0.5">
+                  Completá el wizard de configuración para definir el tamaño de empresa, industria, insumos y productos.
+                </p>
+              </div>
+            </div>
+            <Link
+              href="/onboarding?reconfigure=1"
+              className="shrink-0 text-sm font-medium text-amber-800 border border-amber-300 bg-amber-100 hover:bg-amber-200 px-3 py-1.5 rounded-md transition-colors"
+            >
+              Completar
+            </Link>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Datos de org y cuenta */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card>
@@ -58,6 +83,12 @@ export default async function ConfiguracionPage() {
           <CardContent className="space-y-3 text-sm">
             <Row label="Nombre" value={organization.name} />
             <Row label="Rubro" value={INDUSTRIES[organization.industry]?.label ?? organization.industry} />
+            <Row label="Tamaño" value={
+              organization.company_size === 'micro'   ? 'Microempresa (≤10)' :
+              organization.company_size === 'small'   ? 'Pequeña empresa (11–50)' :
+              organization.company_size === 'medium'  ? 'Mediana tramo 1 (51–200)' :
+              organization.company_size === 'medium2' ? 'Mediana tramo 2 (201–590)' : '—'
+            } />
             <Row label="Plan" value={PLAN_LABELS[organization.plan] ?? organization.plan} />
             <Row label="Idioma" value={LANGUAGE_LABELS[organization.industry_config?.language ?? 'es_AR'] ?? 'Español (Argentina)'} />
             <Row label="ID" value={organization.id} mono />

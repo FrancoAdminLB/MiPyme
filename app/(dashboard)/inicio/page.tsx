@@ -4,6 +4,7 @@ import { formatNumber, formatDate } from '@/lib/utils'
 import {
   FlaskConical, Package, ShoppingCart, ShoppingBag,
   ArrowRight, CheckCircle2, Clock, CheckCheck,
+  ListChecks,
 } from 'lucide-react'
 import Link from 'next/link'
 import { Card, CardContent } from '@/components/ui/card'
@@ -68,6 +69,8 @@ export default async function InicioPage() {
       .order('created_at', { ascending: false })
       .limit(5),
   ])
+
+  const isNewAccount = !batchesRes.data?.length && !recentMovementsRes.data?.length
 
   const batches         = batchesRes.data ?? []
   const completedToday  = completedTodayRes.data ?? []
@@ -176,6 +179,56 @@ export default async function InicioPage() {
           )
         })}
       </div>
+
+      {/* Primeros pasos — solo se muestra en cuentas nuevas sin actividad */}
+      {isNewAccount && (
+        <Card className="border-primary/20 bg-primary/5">
+          <CardContent className="pt-5 pb-4">
+            <p className="text-sm font-semibold flex items-center gap-2 mb-4">
+              <ListChecks className="h-4 w-4 text-primary" />
+              Primeros pasos para empezar a operar
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {[
+                {
+                  step: '1',
+                  title: 'Cargá tu inventario',
+                  desc: 'Agregá tus materias primas y productos terminados con sus stocks iniciales.',
+                  href: '/inventario',
+                  cta: 'Ir a Inventario',
+                },
+                {
+                  step: '2',
+                  title: 'Registrá tu primera producción',
+                  desc: 'Creá un lote de producción y vinculalo a los insumos que usaste.',
+                  href: '/produccion',
+                  cta: 'Ir a Producción',
+                },
+                {
+                  step: '3',
+                  title: 'Cargá un pedido de cliente',
+                  desc: 'Registrá un pedido y hacé seguimiento hasta la entrega.',
+                  href: '/pedidos',
+                  cta: 'Ir a Pedidos',
+                },
+              ].map(({ step, title, desc, href, cta }) => (
+                <Link key={step} href={href} className="group block rounded-lg border bg-background p-4 hover:shadow-sm transition-shadow">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center shrink-0">
+                      {step}
+                    </span>
+                    <p className="text-sm font-semibold">{title}</p>
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-3">{desc}</p>
+                  <span className="text-xs text-primary font-medium flex items-center gap-1 group-hover:underline">
+                    {cta} <ArrowRight className="h-3 w-3" />
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Contenido principal */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

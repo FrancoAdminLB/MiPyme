@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Button } from '@/components/ui/button'
 import { FileText, ChevronRight, X } from 'lucide-react'
 
 type Status = 'pending' | 'confirmed' | 'preparing' | 'ready' | 'delivered' | 'cancelled'
@@ -135,16 +134,14 @@ export function PedidoActions({ orderId, status, hasFiscalConfig }: PedidoAction
           {loadingNext ? 'Guardando...' : nextLabel}
         </button>
       )}
-      {status !== 'cancelled' && (
-        <button
-          onClick={cancelOrder}
-          disabled={loadingCancel}
-          className="text-xs text-muted-foreground hover:text-destructive disabled:opacity-50"
-          title="Cancelar pedido"
-        >
-          <X className="h-3.5 w-3.5" />
-        </button>
-      )}
+      <button
+        onClick={cancelOrder}
+        disabled={loadingCancel}
+        className="text-xs text-muted-foreground hover:text-destructive disabled:opacity-50"
+        title="Cancelar pedido"
+      >
+        <X className="h-3.5 w-3.5" />
+      </button>
       {error && <span className="text-xs text-destructive">{error}</span>}
     </div>
   )

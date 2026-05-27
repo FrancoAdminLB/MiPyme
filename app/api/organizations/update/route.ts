@@ -24,7 +24,7 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ error: 'Solo administradores pueden editar la organización' }, { status: 403 })
   }
 
-  const { name, industry, language, notification_phone } = await req.json()
+  const { name, industry, language, notification_phone, company_size } = await req.json()
 
   // Obtener org actual para preservar config existente
   const { data: currentOrg } = await supabase
@@ -33,10 +33,14 @@ export async function PATCH(req: Request) {
     .eq('id', profile.organization_id)
     .single()
 
+  const VALID_SIZES = ['micro', 'small', 'medium', 'medium2']
   const updates: Record<string, unknown> = {
     name,
     industry,
     notification_phone: notification_phone?.trim() || null,
+  }
+  if (company_size && VALID_SIZES.includes(String(company_size))) {
+    updates.company_size = company_size
   }
 
   if (currentOrg && currentOrg.industry !== industry) {

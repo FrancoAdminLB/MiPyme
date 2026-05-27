@@ -6,6 +6,7 @@ import { AlertTriangle, Clock } from 'lucide-react'
 import { MovimientoForm } from '@/components/modules/inventario/movimiento-form'
 import { EditItemForm } from '@/components/modules/inventario/edit-item-form'
 import { ImportInventarioButton } from '@/components/modules/inventario/import-inventario-button'
+import { AreaSetupBanner } from '@/components/modules/configuracion/area-setup-banner'
 
 const CATEGORY_LABELS: Record<string, string> = {
   materia_prima:    'Materias Primas',
@@ -49,8 +50,11 @@ export default async function InventarioPage() {
     i => i.expiry_date && i.expiry_date <= in30days
   )
 
+  const config = ctx.organization.industry_config ?? {}
+
   return (
     <div className="p-8 space-y-6">
+      <AreaSetupBanner area="inventario" areaLabel="Inventario" orgId={orgId} currentConfig={config} />
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Inventario</h1>
@@ -198,9 +202,20 @@ export default async function InventarioPage() {
       )}
 
       {!items.length && (
-        <p className="text-sm text-muted-foreground text-center py-8">
-          No hay ítems de inventario registrados.
-        </p>
+        <Card className="border-dashed">
+          <CardContent className="py-12 text-center space-y-3">
+            <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto">
+              <AlertTriangle className="h-5 w-5 text-muted-foreground" />
+            </div>
+            <p className="font-medium text-sm">El inventario está vacío</p>
+            <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+              Agregá tus materias primas y productos terminados para poder registrar producción, recibir órdenes y hacer seguimiento de stock.
+            </p>
+            <div className="flex gap-2 justify-center pt-1">
+              <EditItemForm suppliers={suppliers as never} mode="new" />
+            </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   )

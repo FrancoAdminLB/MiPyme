@@ -143,9 +143,24 @@ export function BatchesTable({ batches, items, inputs, config, inputLabel, outpu
 
       {/* Tabla */}
       {filtered.length === 0 ? (
-        <p className="text-sm text-muted-foreground py-8 text-center">
-          {hasFilters ? 'No hay lotes que coincidan con los filtros.' : 'No hay lotes registrados. ¡Creá el primero!'}
-        </p>
+        <div className="py-12 text-center space-y-3">
+          {hasFilters ? (
+            <>
+              <p className="text-sm text-muted-foreground">No hay lotes que coincidan con los filtros.</p>
+              <button onClick={clearFilters} className="text-sm text-primary hover:underline">Limpiar filtros</button>
+            </>
+          ) : (
+            <>
+              <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center mx-auto">
+                <Search className="h-5 w-5 text-blue-400" />
+              </div>
+              <p className="font-medium text-sm">No hay lotes registrados todavía</p>
+              <p className="text-xs text-muted-foreground max-w-xs mx-auto">
+                Usá el botón <span className="font-semibold">Nuevo lote</span> arriba a la derecha para registrar tu primera producción.
+              </p>
+            </>
+          )}
+        </div>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">

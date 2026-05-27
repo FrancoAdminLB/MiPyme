@@ -99,51 +99,121 @@ export function BatchStatusButton({ batchId, currentStatus, productName, quantit
           ))
         }
 
-        // 2. Registrar entrada de producto terminado
-        const { data: items } = await supabase
-          .from('inventory_items')
-          .select('id')
-          .eq('organization_id', orgId)
-          .eq('category', 'producto_terminado')
-          .ilike('name', productName)
-          .limit(1)
+        // 2. Registrar movimientos de producto terminado
+        const esPorcionado = customData?.tipo_presentacion === 'Porcionado'
 
-        const itemId = items?.[0]?.id
-
-        if (itemId) {
-          await supabase.from('inventory_movements').insert({
-            organization_id: orgId,
-            item_id: itemId,
-            movement_type: 'entrada',
-            quantity: quantityKg,
-            reference: `LOTE-${batchId}`,
-            notes: `Producción completada — ${productName}`,
-            created_by: user.id,
-          })
-        } else {
-          const { data: newItem } = await supabase
+        if (esPorcionado) {
+          // 2a. Salida del entero (si existe en stock)
+          const { data: enteroItems } = await supabase
             .from('inventory_items')
-            .insert({
-              organization_id: orgId,
-              name: productName,
-              category: 'producto_terminado',
-              unit: 'kg',
-              current_stock: 0,
-              min_stock: 0,
-            })
             .select('id')
-            .single()
+            .eq('organization_id', orgId)
+            .eq('category', 'producto_terminado')
+            .ilike('name', productName)
+            .limit(1)
 
-          if (newItem) {
+          if (enteroItems?.[0]?.id) {
+            const cantidadMoldes = Number(customData?.cantidad_moldes ?? 0)
+            if (cantidadMoldes > 0) {
+              await supabase.from('inventory_movements').insert({
+                organization_id: orgId,
+                item_id: enteroItems[0].id,
+                movement_type: 'salida',
+                quantity: cantidadMoldes,
+                reference: `LOTE-${batchId}`,
+                notes: `Porcionado — ${productName}`,
+                created_by: user.id,
+              })
+            }
+          }
+
+          // 2b. Entrada de porciones
+          const cantidadPorciones = Number(customData?.cantidad_porciones ?? 0)
+          const nombrePorcionado = `${productName} — porcionado`
+
+          if (cantidadPorciones > 0) {
+            const { data: porcionItems } = await supabase
+              .from('inventory_items')
+              .select('id')
+              .eq('organization_id', orgId)
+              .eq('category', 'producto_terminado')
+              .ilike('name', nombrePorcionado)
+              .limit(1)
+
+            const porcionId = porcionItems?.[0]?.id ?? (await supabase
+              .from('inventory_items')
+              .insert({
+                organization_id: orgId,
+                name: nombrePorcionado,
+                category: 'producto_terminado',
+                unit: 'u',
+                current_stock: 0,
+                min_stock: 0,
+              })
+              .select('id')
+              .single()
+            ).data?.id
+
+            if (porcionId) {
+              await supabase.from('inventory_movements').insert({
+                organization_id: orgId,
+                item_id: porcionId,
+                movement_type: 'entrada',
+                quantity: cantidadPorciones,
+                reference: `LOTE-${batchId}`,
+                notes: `Porcionado completado — ${productName}`,
+                created_by: user.id,
+              })
+            }
+          }
+
+        } else {
+          // Flujo normal: entrada de producto entero en kg
+          const { data: items } = await supabase
+            .from('inventory_items')
+            .select('id')
+            .eq('organization_id', orgId)
+            .eq('category', 'producto_terminado')
+            .ilike('name', productName)
+            .limit(1)
+
+          const itemId = items?.[0]?.id
+
+          if (itemId) {
             await supabase.from('inventory_movements').insert({
               organization_id: orgId,
-              item_id: newItem.id,
+              item_id: itemId,
               movement_type: 'entrada',
               quantity: quantityKg,
               reference: `LOTE-${batchId}`,
               notes: `Producción completada — ${productName}`,
               created_by: user.id,
             })
+          } else {
+            const { data: newItem } = await supabase
+              .from('inventory_items')
+              .insert({
+                organization_id: orgId,
+                name: productName,
+                category: 'producto_terminado',
+                unit: 'kg',
+                current_stock: 0,
+                min_stock: 0,
+              })
+              .select('id')
+              .single()
+
+            if (newItem) {
+              await supabase.from('inventory_movements').insert({
+                organization_id: orgId,
+                item_id: newItem.id,
+                movement_type: 'entrada',
+                quantity: quantityKg,
+                reference: `LOTE-${batchId}`,
+                notes: `Producción completada — ${productName}`,
+                created_by: user.id,
+              })
+            }
           }
         }
       }

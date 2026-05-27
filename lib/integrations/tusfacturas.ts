@@ -61,7 +61,7 @@ function fechaAfip(date?: string): string {
 export async function emitirFactura(
   params: EmitInvoiceParams
 ): Promise<TusFacturasResponse> {
-  const { fiscalConfig, items, clientCuit, clientRazonSocial } = params
+  const { fiscalConfig, items, clientCuit } = params
   const tipo = params.tipoComprobante ?? fiscalConfig.tipo_comprobante_default
   const fecha = fechaAfip(params.fecha)
 

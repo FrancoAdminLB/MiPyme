@@ -21,16 +21,24 @@ import type { Organization } from '@/types'
 import { OrgSwitcher } from './org-switcher'
 
 const NAV_ITEMS = [
-  { title: 'Inicio',        href: '/inicio',        icon: LayoutDashboard },
-  { title: 'Reportes',      href: '/reportes',      icon: BarChart3 },
-  { title: 'Producción',    href: '/produccion',    icon: FlaskConical },
-  { title: 'Inventario',    href: '/inventario',    icon: Package },
-  { title: 'Pedidos',       href: '/pedidos',       icon: ShoppingBag },
-  { title: 'Órdenes',       href: '/ordenes',       icon: ShoppingCart },
-  { title: 'Proveedores',   href: '/proveedores',   icon: Truck },
-  { title: 'Asistente',     href: '/asistente',     icon: MessageSquare },
-  { title: 'Configuración', href: '/configuracion', icon: Settings },
+  { title: 'Inicio',        href: '/inicio',        icon: LayoutDashboard, minSize: 'micro'   },
+  { title: 'Reportes',      href: '/reportes',      icon: BarChart3,       minSize: 'small'   },
+  { title: 'Producción',    href: '/produccion',    icon: FlaskConical,    minSize: 'micro'   },
+  { title: 'Inventario',    href: '/inventario',    icon: Package,         minSize: 'micro'   },
+  { title: 'Pedidos',       href: '/pedidos',       icon: ShoppingBag,     minSize: 'micro'   },
+  { title: 'Órdenes',       href: '/ordenes',       icon: ShoppingCart,    minSize: 'small'   },
+  { title: 'Proveedores',   href: '/proveedores',   icon: Truck,           minSize: 'small'   },
+  { title: 'Asistente',     href: '/asistente',     icon: MessageSquare,   minSize: 'micro'   },
+  { title: 'Configuración', href: '/configuracion', icon: Settings,        minSize: 'micro'   },
 ]
+
+const SIZE_ORDER = ['micro', 'small', 'medium', 'medium2']
+
+function getNavItems(companySize: string | null) {
+  const sizeIndex = SIZE_ORDER.indexOf(companySize ?? 'small')
+  const effectiveIndex = sizeIndex === -1 ? 1 : sizeIndex
+  return NAV_ITEMS.filter(item => SIZE_ORDER.indexOf(item.minSize) <= effectiveIndex)
+}
 
 interface SidebarProps {
   organization: Organization
@@ -71,7 +79,7 @@ export function Sidebar({ organization, pendingOrders, pendingPedidos, isSuperAd
 
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-1">
-        {NAV_ITEMS.map((item) => {
+        {getNavItems(organization.company_size).map((item) => {
           const Icon = item.icon
           const isActive = pathname.startsWith(item.href)
           return (

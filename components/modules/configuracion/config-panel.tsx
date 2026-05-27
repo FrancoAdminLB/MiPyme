@@ -6,8 +6,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Plus, Trash2, Save, GripVertical, Globe } from 'lucide-react'
-import type { IndustryConfig, CustomField } from '@/types'
+import { Plus, Trash2, Save, GripVertical, Globe, Users } from 'lucide-react'
+import type { IndustryConfig, CustomField, AreaResponsables } from '@/types'
+
+const AREAS: { key: keyof AreaResponsables; label: string }[] = [
+  { key: 'produccion', label: 'Producción' },
+  { key: 'inventario', label: 'Inventario / Stock' },
+  { key: 'calidad',    label: 'Calidad' },
+  { key: 'pedidos',    label: 'Pedidos / Ventas' },
+  { key: 'compras',    label: 'Compras' },
+]
 
 const LANGUAGES = [
   { value: 'es_AR', label: '🇦🇷 Español (Argentina)' },
@@ -270,6 +278,33 @@ export function ConfigPanel({ initialConfig }: ConfigPanelProps) {
             <Plus className="h-4 w-4 mr-2" />
             Agregar campo
           </Button>
+        </CardContent>
+      </Card>
+
+      {/* ── Responsables por área ── */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Users className="h-4 w-4" /> Responsables por área
+          </CardTitle>
+          <p className="text-sm text-muted-foreground">
+            El encargado de cada área se pre-completa automáticamente en los formularios. Podés cambiarlo por lote/movimiento.
+          </p>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {AREAS.map(area => (
+            <div key={area.key} className="space-y-1.5">
+              <Label className="text-xs">{area.label}</Label>
+              <Input
+                placeholder="Nombre y apellido"
+                value={config.area_responsables?.[area.key] ?? ''}
+                onChange={e => setConfig(c => ({
+                  ...c,
+                  area_responsables: { ...(c.area_responsables ?? {}), [area.key]: e.target.value },
+                }))}
+              />
+            </div>
+          ))}
         </CardContent>
       </Card>
 

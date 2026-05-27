@@ -5,6 +5,7 @@ import { NuevoLoteButton } from '@/components/modules/produccion/nuevo-lote-butt
 import { ImportProduccionButton } from '@/components/modules/produccion/import-produccion-button'
 import { ProductTemplatesWizard } from '@/components/modules/produccion/product-templates-wizard'
 import { BatchesTable } from '@/components/modules/produccion/batches-table'
+import { AreaSetupBanner } from '@/components/modules/configuracion/area-setup-banner'
 import Link from 'next/link'
 import { Printer } from 'lucide-react'
 
@@ -47,6 +48,14 @@ export default async function ProduccionPage() {
 
   return (
     <div className="p-8 space-y-6">
+
+      {/* Banner encargado de área */}
+      <AreaSetupBanner
+        area="produccion"
+        areaLabel="Producción"
+        orgId={orgId}
+        currentConfig={config}
+      />
 
       {/* Banner primera vez — configurar plantillas */}
       {showTemplatesBanner && (

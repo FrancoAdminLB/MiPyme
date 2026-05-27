@@ -46,8 +46,10 @@ export function NuevoLoteButton({ config, batches = [] }: NuevoLoteButtonProps) 
     input_quantity: '',
     start_date:     new Date().toISOString().split('T')[0],
     notes:          '',
+    responsable:    '',
   })
   const [customData, setCustomData] = useState<Record<string, string>>({})
+  const defaultResponsable = config.area_responsables?.produccion ?? ''
 
   const stages       = config.stages ?? []
   const [selectedStage, setSelectedStage] = useState(stages[0] ?? '')
@@ -79,7 +81,11 @@ export function NuevoLoteButton({ config, batches = [] }: NuevoLoteButtonProps) 
   const lastValues = (lastBatch?.custom_data ?? {}) as Record<string, string>
 
   function handleOpen() {
-    setForm(prev => ({ ...prev, batch_code: generateBatchCode() }))
+    setForm(prev => ({
+      ...prev,
+      batch_code: generateBatchCode(),
+      responsable: defaultResponsable,
+    }))
     setOpen(true)
   }
 
@@ -98,7 +104,7 @@ export function NuevoLoteButton({ config, batches = [] }: NuevoLoteButtonProps) 
   }
 
   function resetForm() {
-    setForm({ batch_code: '', product_name: '', quantity_kg: '', input_quantity: '', start_date: new Date().toISOString().split('T')[0], notes: '' })
+    setForm({ batch_code: '', product_name: '', quantity_kg: '', input_quantity: '', start_date: new Date().toISOString().split('T')[0], notes: '', responsable: '' })
     setCustomData({})
     setSelectedStage(stages[0] ?? '')
     setError(null)
@@ -124,6 +130,7 @@ export function NuevoLoteButton({ config, batches = [] }: NuevoLoteButtonProps) 
     const finalCustomData = {
       ...customData,
       ...(selectedStage ? { etapa: selectedStage } : {}),
+      ...(form.responsable ? { responsable: form.responsable } : {}),
     }
 
     const { error } = await supabase.from('production_batches').insert({
@@ -186,6 +193,18 @@ export function NuevoLoteButton({ config, batches = [] }: NuevoLoteButtonProps) 
                 <Label htmlFor="start_date">Fecha inicio</Label>
                 <Input id="start_date" name="start_date" type="date" value={form.start_date} onChange={handleChange} required />
               </div>
+            </div>
+
+            {/* Responsable */}
+            <div className="space-y-2">
+              <Label htmlFor="responsable">Responsable</Label>
+              <Input
+                id="responsable"
+                name="responsable"
+                placeholder="Encargado del lote"
+                value={form.responsable}
+                onChange={handleChange}
+              />
             </div>
 
             {/* Producto + cantidades */}

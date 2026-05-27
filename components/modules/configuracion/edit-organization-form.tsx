@@ -6,8 +6,15 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Pencil, X, Save, MessageCircle } from 'lucide-react'
-import type { Organization } from '@/types'
+import type { Organization, CompanySize } from '@/types'
 import { INDUSTRY_GROUPS, INDUSTRIES } from '@/lib/industries'
+
+const COMPANY_SIZES: { value: CompanySize; label: string; desc: string }[] = [
+  { value: 'micro',   label: 'Microempresa',       desc: 'Hasta 10 empleados' },
+  { value: 'small',   label: 'Pequeña empresa',    desc: '11 a 50 empleados' },
+  { value: 'medium',  label: 'Mediana (tramo 1)',   desc: '51 a 200 empleados' },
+  { value: 'medium2', label: 'Mediana (tramo 2)',   desc: '201 a 590 empleados' },
+]
 
 export function EditOrganizationForm({ organization }: { organization: Organization }) {
   const router = useRouter()
@@ -19,6 +26,7 @@ export function EditOrganizationForm({ organization }: { organization: Organizat
     industry:           organization.industry,
     language:           organization.industry_config?.language ?? 'es_AR',
     notification_phone: (organization as Organization & { notification_phone?: string }).notification_phone ?? '',
+    company_size:       (organization.company_size ?? 'small') as CompanySize,
   })
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
@@ -90,6 +98,26 @@ export function EditOrganizationForm({ organization }: { organization: Organizat
                   <p className="text-xs text-muted-foreground">
                   Cambiá el rubro y el asistente IA se adapta automáticamente.
                 </p>
+              </div>
+              <div className="space-y-2">
+                <Label>Tamaño de empresa (SEPYME)</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  {COMPANY_SIZES.map(opt => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setForm(p => ({ ...p, company_size: opt.value }))}
+                      className={`text-left p-2.5 rounded-lg border text-sm transition-colors ${
+                        form.company_size === opt.value
+                          ? 'border-primary bg-primary/5 text-primary'
+                          : 'border-border hover:border-primary/50'
+                      }`}
+                    >
+                      <span className="font-medium block">{opt.label}</span>
+                      <span className="text-xs text-muted-foreground">{opt.desc}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
               <div className="space-y-2">
                 <Label>Idioma</Label>

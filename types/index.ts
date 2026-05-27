@@ -24,6 +24,13 @@ export type Industry =
 export type Plan = 'free' | 'starter' | 'pro' | 'enterprise'
 export type UserRole = 'admin' | 'manager' | 'operator'
 
+/** Clasificación SEPYME — Secretaría de la Pequeña y Mediana Empresa */
+export type CompanySize =
+  | 'micro'    // Microempresa: hasta 10 empleados
+  | 'small'    // Pequeña empresa: 11 a 50 empleados
+  | 'medium'   // Mediana (tramo 1): 51 a 200 empleados
+  | 'medium2'  // Mediana (tramo 2): 201 a 590 empleados
+
 export interface Organization {
   id: string
   name: string
@@ -32,6 +39,7 @@ export interface Organization {
   plan: Plan
   industry_config: IndustryConfig
   onboarding_completed: boolean
+  company_size: CompanySize | null
   created_at: string
 }
 
@@ -47,6 +55,16 @@ export interface Profile {
   created_at: string
 }
 
+/** Encargados por área — aplica a todos los rubros */
+export interface AreaResponsables {
+  produccion?: string
+  inventario?: string
+  calidad?: string
+  pedidos?: string
+  compras?: string
+  [key: string]: string | undefined
+}
+
 // Configuración custom por industria (guardada como JSONB en organizations)
 export interface IndustryConfig {
   currency?: string
@@ -59,6 +77,7 @@ export interface IndustryConfig {
   stages?: string[]               // Etapas del proceso productivo
   language?: 'es_AR' | 'en'      // Idioma de la interfaz
   product_templates?: Record<string, Record<string, string>> // Valores por defecto por tipo de producto
+  area_responsables?: AreaResponsables  // Encargados por área
 }
 
 export interface CustomField {

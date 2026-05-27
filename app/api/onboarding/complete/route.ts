@@ -21,12 +21,14 @@ export async function POST(req: Request) {
   if (!profile) return NextResponse.json({ error: 'Perfil no encontrado' }, { status: 404 })
 
   const body = await req.json()
-  const { industryConfig, industry } = body
+  const { industryConfig, industry, company_size } = body
   const initialItems: unknown[] = Array.isArray(body.initialItems) ? body.initialItems.slice(0, 50) : []
 
   if (!industryConfig || typeof industryConfig !== 'object') {
     return NextResponse.json({ error: 'Configuración inválida' }, { status: 400 })
   }
+
+  const VALID_SIZES = ['micro', 'small', 'medium', 'medium2']
 
   // Guardar config de la industria y marcar onboarding como completo
   const updates: Record<string, unknown> = {
@@ -34,6 +36,7 @@ export async function POST(req: Request) {
     onboarding_completed: true,
   }
   if (industry) updates.industry = industry
+  if (company_size && VALID_SIZES.includes(String(company_size))) updates.company_size = company_size
 
   const { error: orgError } = await supabaseAdmin
     .from('organizations')

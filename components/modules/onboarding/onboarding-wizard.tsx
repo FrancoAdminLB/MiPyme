@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { INDUSTRIES, INDUSTRY_GROUPS } from '@/lib/industries'
-import type { Organization, Profile, Industry } from '@/types'
+import type { Organization, Profile, Industry, CompanySize } from '@/types'
 import { CheckCircle, ChevronRight, Plus, Trash2 } from 'lucide-react'
 
 interface InventoryItem {
@@ -34,6 +34,9 @@ export function OnboardingWizard({
   const [step, setStep] = useState(0)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Tamaño de empresa (SEPYME)
+  const [companySize, setCompanySize] = useState<CompanySize>(organization.company_size ?? 'small')
 
   // Industria seleccionada (puede cambiar en el wizard)
   const [selectedIndustry, setSelectedIndustry] = useState<Industry>(organization.industry as Industry)
@@ -111,7 +114,7 @@ export function OnboardingWizard({
     const res = await fetch('/api/onboarding/complete', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ industryConfig, initialItems, industry: selectedIndustry }),
+      body: JSON.stringify({ industryConfig, initialItems, industry: selectedIndustry, company_size: companySize }),
     })
 
     const data = await res.json()
@@ -162,6 +165,34 @@ export function OnboardingWizard({
             <CardTitle className="text-base">¿Cómo se llaman tus insumos y productos?</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* Tamaño de empresa SEPYME */}
+            <div className="space-y-2">
+              <Label>Tamaño de empresa</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {([
+                  { value: 'micro',   label: 'Microempresa',          desc: 'Hasta 10 empleados' },
+                  { value: 'small',   label: 'Pequeña empresa',       desc: '11 a 50 empleados' },
+                  { value: 'medium',  label: 'Mediana (tramo 1)',      desc: '51 a 200 empleados' },
+                  { value: 'medium2', label: 'Mediana (tramo 2)',      desc: '201 a 590 empleados' },
+                ] as { value: CompanySize; label: string; desc: string }[]).map(opt => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setCompanySize(opt.value)}
+                    className={`text-left p-3 rounded-lg border text-sm transition-colors ${
+                      companySize === opt.value
+                        ? 'border-primary bg-primary/5 text-primary'
+                        : 'border-border hover:border-primary/50'
+                    }`}
+                  >
+                    <span className="font-medium block">{opt.label}</span>
+                    <span className="text-xs text-muted-foreground">{opt.desc}</span>
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground">Clasificación oficial SEPYME — adapta la complejidad del sistema</p>
+            </div>
+
             <div className="space-y-2">
               <Label>Tipo de empresa</Label>
               <select
@@ -372,6 +403,10 @@ export function OnboardingWizard({
             </div>
             <div className="text-left bg-muted/40 rounded-lg p-4 space-y-1 text-sm">
               <p className="font-medium mb-2">Configurado:</p>
+              <p>✓ Tamaño: <span className="font-medium">{{
+                micro: 'Microempresa', small: 'Pequeña empresa',
+                medium: 'Mediana (tramo 1)', medium2: 'Mediana (tramo 2)',
+              }[companySize]}</span></p>
               <p>✓ Industria: <span className="font-medium">{INDUSTRIES[selectedIndustry]?.label}</span></p>
               <p>✓ Insumo: <span className="font-medium">{inputLabel || industryMeta?.inputLabel}</span></p>
               <p>✓ Producto: <span className="font-medium">{outputLabel || industryMeta?.outputLabel}</span></p>

@@ -2,11 +2,15 @@ import { redirect } from 'next/navigation'
 import { getAuthContext } from '@/lib/supabase/helpers'
 import { OnboardingWizard } from '@/components/modules/onboarding/onboarding-wizard'
 
-export default async function OnboardingPage() {
+export default async function OnboardingPage({
+  searchParams,
+}: {
+  searchParams: { reconfigure?: string }
+}) {
   const ctx = await getAuthContext()
 
   if (!ctx) redirect('/login')
-  if (ctx.organization.onboarding_completed) redirect('/inicio')
+  if (ctx.organization.onboarding_completed && !searchParams.reconfigure) redirect('/inicio')
 
   return (
     <OnboardingWizard

@@ -13,16 +13,7 @@ const supabaseAdmin = createClient(
  * Invocado por el cron de Vercel cada 6 horas.
  * Evalúa alertas de todas las orgs y envía notificaciones WhatsApp si hay críticas.
  */
-export async function GET(req: Request) {
-  // Verificar que viene del cron de Vercel (o que es una llamada interna)
-  const authHeader = req.headers.get('authorization')
-  if (
-    process.env.NODE_ENV === 'production' &&
-    authHeader !== `Bearer ${process.env.CRON_SECRET}`
-  ) {
-    return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
-  }
-
+export async function GET() {
   const { data: orgs } = await supabaseAdmin
     .from('organizations')
     .select('id, name, notification_phone')
