@@ -30,10 +30,29 @@ interface BatchesTableProps {
   outputLabel: string
 }
 
+// Rendimiento promedio histórico por producto (solo lotes completados)
+function buildAvgYield(batches: Record<string, unknown>[]): Map<string, number> {
+  const map = new Map<string, { sum: number; count: number }>()
+  for (const b of batches) {
+    if (b.status !== 'completed') continue
+    const y = b.yield_percentage as number
+    const p = b.product_name as string
+    if (!y || !p) continue
+    const cur = map.get(p) ?? { sum: 0, count: 0 }
+    map.set(p, { sum: cur.sum + y, count: cur.count + 1 })
+  }
+  const result = new Map<string, number>()
+  for (const [product, { sum, count }] of map) {
+    result.set(product, sum / count)
+  }
+  return result
+}
+
 export function BatchesTable({ batches, items, inputs, config, inputLabel, outputLabel }: BatchesTableProps) {
   const [search, setSearch]       = useState('')
   const [statusFilter, setStatus] = useState<Status>('all')
   const [productFilter, setProduct] = useState('all')
+  const avgYieldByProduct = useMemo(() => buildAvgYield(batches), [batches])
 
   // Productos únicos presentes en los lotes
   const availableProducts = useMemo(() => {
@@ -216,6 +235,8 @@ export function BatchesTable({ batches, items, inputs, config, inputLabel, outpu
                           currentStatus={b.status as string}
                           productName={b.product_name as string}
                           quantityKg={b.quantity_kg as number}
+                          inputQuantity={b.input_quantity as number}
+                          historicalAvgYield={avgYieldByProduct.get(b.product_name as string) ?? null}
                           customData={b.custom_data as Record<string, unknown> | undefined}
                           config={config}
                           batchInputs={batchInputs as never}

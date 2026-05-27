@@ -7,7 +7,7 @@ import { ProductTemplatesWizard } from '@/components/modules/produccion/product-
 import { BatchesTable } from '@/components/modules/produccion/batches-table'
 import { AreaSetupBanner } from '@/components/modules/configuracion/area-setup-banner'
 import Link from 'next/link'
-import { Printer } from 'lucide-react'
+import { Printer, AlertCircle, PackageSearch } from 'lucide-react'
 
 export default async function ProduccionPage() {
   const ctx = await getAuthContext()
@@ -16,7 +16,7 @@ export default async function ProduccionPage() {
   const supabase = createClient()
   const orgId = ctx.organization.id
 
-  const [batchesRes, itemsRes, inputsRes] = await Promise.all([
+  const [batchesRes, itemsRes, inputsRes, pedidosRes] = await Promise.all([
     supabase
       .from('production_batches')
       .select('*')
@@ -32,11 +32,17 @@ export default async function ProduccionPage() {
       .from('production_batch_inputs')
       .select('*, inventory_items(name, unit)')
       .eq('organization_id', orgId),
+    supabase
+      .from('sales_orders')
+      .select('id, sales_order_items(product_name, quantity, unit)')
+      .eq('organization_id', orgId)
+      .in('status', ['pending', 'confirmed', 'preparing']),
   ])
 
   const batches = batchesRes.data ?? []
   const items   = itemsRes.data ?? []
   const inputs  = inputsRes.data ?? []
+  const pedidos = pedidosRes.data ?? []
 
   const config      = ctx.organization.industry_config ?? {}
   const inputLabel  = config.input_label  || 'Insumo principal'
@@ -45,6 +51,28 @@ export default async function ProduccionPage() {
   const productTypes      = config.product_types ?? []
   const hasTemplates      = Object.keys(config.product_templates ?? {}).length > 0
   const showTemplatesBanner = productTypes.length > 0 && !hasTemplates
+
+  // Automatización 1: productos con pedidos pendientes sin lote activo
+  const activeBatchProducts = new Set(
+    batches.filter(b => b.status === 'in_progress').map(b => b.product_name.toLowerCase())
+  )
+  const pendingByProduct = new Map<string, number>()
+  for (const pedido of pedidos) {
+    const orderItems = pedido.sales_order_items as { product_name: string; quantity: number; unit: string }[] | null
+    for (const item of orderItems ?? []) {
+      const key = item.product_name
+      pendingByProduct.set(key, (pendingByProduct.get(key) ?? 0) + item.quantity)
+    }
+  }
+  const productosAPlanificar = Array.from(pendingByProduct.entries())
+    .filter(([name]) => !activeBatchProducts.has(name.toLowerCase()))
+    .sort((a, b) => b[1] - a[1])
+
+  // Automatización 2: lotes en proceso sin insumos registrados
+  const batchesConInputs = new Set(inputs.map(i => i.batch_id))
+  const lotesSinInsumos = batches.filter(
+    b => b.status === 'in_progress' && !batchesConInputs.has(b.id)
+  )
 
   return (
     <div className="p-8 space-y-6">
@@ -63,11 +91,56 @@ export default async function ProduccionPage() {
           <div>
             <p className="text-sm font-medium">Agilizá el trabajo de tus operarios</p>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Configurá los valores típicos por producto (marca de fermento, cuajo, cantidades, etc.) y se pre-cargarán automáticamente al crear cada lote.
+              Configurá los valores típicos por producto y se pre-cargarán automáticamente al crear cada lote.
             </p>
           </div>
           <ProductTemplatesWizard config={config} />
         </div>
+      )}
+
+      {/* Automatización 1: qué producir según pedidos pendientes */}
+      {productosAPlanificar.length > 0 && (
+        <Card className="border-blue-200 bg-blue-50">
+          <CardContent className="pt-4 pb-4">
+            <p className="text-sm font-semibold text-blue-800 mb-2">
+              Productos con pedidos pendientes sin lote activo
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {productosAPlanificar.map(([product, qty]) => (
+                <span
+                  key={product}
+                  className="text-xs bg-white border border-blue-200 text-blue-700 px-3 py-1 rounded-full font-medium"
+                >
+                  {product} — {qty % 1 === 0 ? qty : qty.toFixed(1)} unid. pendientes
+                </span>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Automatización 2: lotes sin insumos registrados */}
+      {lotesSinInsumos.length > 0 && (
+        <Card className="border-orange-200 bg-orange-50">
+          <CardContent className="pt-4 pb-4">
+            <p className="text-sm font-semibold text-orange-800 mb-2 flex items-center gap-1.5">
+              <PackageSearch className="h-4 w-4" />
+              {lotesSinInsumos.length === 1
+                ? '1 lote en proceso sin insumos registrados'
+                : `${lotesSinInsumos.length} lotes en proceso sin insumos registrados`}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {lotesSinInsumos.map(b => (
+                <span
+                  key={b.id}
+                  className="text-xs bg-white border border-orange-200 text-orange-700 px-3 py-1 rounded-full font-mono"
+                >
+                  {b.batch_code} · {b.product_name}
+                </span>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       <div className="flex items-center justify-between">
@@ -84,7 +157,7 @@ export default async function ProduccionPage() {
             <Printer className="h-4 w-4" /> Imprimir turno
           </Link>
           <ImportProduccionButton />
-          <NuevoLoteButton config={config} batches={batches as never} />
+          <NuevoLoteButton config={config} batches={batches as never} pendingOrders={pendingByProduct as never} />
         </div>
       </div>
 

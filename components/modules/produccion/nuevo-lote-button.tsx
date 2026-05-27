@@ -31,9 +31,10 @@ function generateBatchCode() {
 interface NuevoLoteButtonProps {
   config: IndustryConfig
   batches?: ProductionBatch[]
+  pendingOrders?: Map<string, number>
 }
 
-export function NuevoLoteButton({ config, batches = [] }: NuevoLoteButtonProps) {
+export function NuevoLoteButton({ config, batches = [], pendingOrders }: NuevoLoteButtonProps) {
   const router = useRouter()
   const [open, setOpen]       = useState(false)
   const [loading, setLoading] = useState(false)
@@ -247,6 +248,13 @@ export function NuevoLoteButton({ config, batches = [] }: NuevoLoteButtonProps) 
                 <Input id="quantity_kg" name="quantity_kg" type="number" min="0" step="0.001" placeholder="0" value={form.quantity_kg} onChange={handleChange} required />
               </div>
             </div>
+
+            {/* Hint: pedidos pendientes para este producto */}
+            {form.product_name && pendingOrders?.get(form.product_name) ? (
+              <p className="text-xs bg-blue-50 border border-blue-200 text-blue-700 rounded px-3 py-2">
+                Hay <span className="font-semibold">{pendingOrders.get(form.product_name)?.toFixed?.(1) ?? pendingOrders.get(form.product_name)}</span> unidades de <span className="font-semibold">{form.product_name}</span> en pedidos pendientes de entrega.
+              </p>
+            ) : null}
 
             {/* Referencia al lote anterior */}
             {lastBatch && (

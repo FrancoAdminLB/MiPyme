@@ -17,6 +17,8 @@ interface BatchStatusButtonProps {
   currentStatus: string
   productName: string
   quantityKg: number
+  inputQuantity: number
+  historicalAvgYield?: number | null
   customData?: Record<string, unknown>
   config?: IndustryConfig
   batchInputs?: BatchInput[]
@@ -43,29 +45,43 @@ function getOutOfRangeFields(customData: Record<string, unknown>, config: Indust
     .map(f => f.label)
 }
 
-export function BatchStatusButton({ batchId, currentStatus, productName, quantityKg, customData, config, batchInputs }: BatchStatusButtonProps) {
+export function BatchStatusButton({ batchId, currentStatus, productName, quantityKg, inputQuantity, historicalAvgYield, customData, config, batchInputs }: BatchStatusButtonProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
 
   if (currentStatus !== 'in_progress') return null
 
   async function update(newStatus: 'completed' | 'cancelled') {
-    if (newStatus === 'completed' && customData && config) {
-      const missing = getMissingRequiredFields(customData, config)
-      const outOfRange = getOutOfRangeFields(customData, config)
-      if (missing.length > 0 || outOfRange.length > 0) {
-        const lines: string[] = []
-        if (missing.length > 0) lines.push(`Campos requeridos sin completar:\n• ${missing.join('\n• ')}`)
-        if (outOfRange.length > 0) lines.push(`Parámetros fuera de norma:\n• ${outOfRange.join('\n• ')}`)
-        const proceed = confirm(
-          `⚠️ ADVERTENCIA — Incumplimiento normativo\n\n${lines.join('\n\n')}\n\n¿Querés completar el lote de todas formas?`
-        )
+    if (newStatus === 'completed') {
+      const warnings: string[] = []
+
+      // Validación de campos normativos
+      if (customData && config) {
+        const missing = getMissingRequiredFields(customData, config)
+        const outOfRange = getOutOfRangeFields(customData, config)
+        if (missing.length > 0) warnings.push(`Campos requeridos sin completar:\n• ${missing.join('\n• ')}`)
+        if (outOfRange.length > 0) warnings.push(`Parámetros fuera de norma:\n• ${outOfRange.join('\n• ')}`)
+      }
+
+      // Alerta de rendimiento bajo vs histórico
+      if (historicalAvgYield != null && inputQuantity > 0) {
+        const currentYield = (quantityKg / inputQuantity) * 100
+        const diff = historicalAvgYield - currentYield
+        if (diff > 5) {
+          warnings.push(
+            `Rendimiento por debajo del promedio histórico:\n• Este lote: ${currentYield.toFixed(1)}%\n• Promedio de ${productName}: ${historicalAvgYield.toFixed(1)}%\n• Diferencia: -${diff.toFixed(1)}%`
+          )
+        }
+      }
+
+      if (warnings.length > 0) {
+        const proceed = confirm(`⚠️ ADVERTENCIA\n\n${warnings.join('\n\n')}\n\n¿Completar el lote de todas formas?`)
         if (!proceed) return
       } else {
         if (!confirm('¿Marcás este lote como completado?')) return
       }
     } else {
-      if (!confirm(newStatus === 'completed' ? '¿Marcás este lote como completado?' : '¿Cancelás este lote?')) return
+      if (!confirm('¿Cancelás este lote?')) return
     }
     setLoading(true)
     const supabase = createClient()
