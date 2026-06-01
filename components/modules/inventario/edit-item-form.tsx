@@ -38,6 +38,7 @@ export function EditItemForm({ item, suppliers, mode }: EditItemFormProps) {
     lot_number:    item?.lot_number    ?? '',
     expiry_date:   item?.expiry_date   ?? '',
     received_date: item?.received_date ?? '',
+    unit_cost:     item?.unit_cost != null ? String(item.unit_cost) : '',
   })
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
@@ -69,6 +70,7 @@ export function EditItemForm({ item, suppliers, mode }: EditItemFormProps) {
       lot_number:    form.lot_number  || null,
       expiry_date:   form.expiry_date   || null,
       received_date: form.received_date || null,
+      unit_cost:     form.unit_cost ? parseFloat(form.unit_cost) : null,
     }
 
     const { error } = mode === 'edit' && item
@@ -137,6 +139,19 @@ export function EditItemForm({ item, suppliers, mode }: EditItemFormProps) {
                   <Label>Stock máximo</Label>
                   <Input name="max_stock" type="number" min="0" step="0.001" value={form.max_stock} onChange={handleChange} placeholder="Opcional" />
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Costo unitario (ARS)</Label>
+                <Input
+                  name="unit_cost"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={form.unit_cost}
+                  onChange={handleChange}
+                  placeholder="Ej: 150.00 — usado para calcular costos de producción"
+                />
               </div>
 
               <div className="border-t pt-4 space-y-3">

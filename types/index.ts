@@ -130,6 +130,7 @@ export interface InventoryItem {
   lot_number: string | null
   expiry_date: string | null
   received_date: string | null
+  unit_cost: number | null
   created_at: string
 }
 

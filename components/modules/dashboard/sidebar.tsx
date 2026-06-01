@@ -14,6 +14,7 @@ import {
   ShoppingCart,
   ShoppingBag,
   LayoutDashboard,
+  DollarSign,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
@@ -28,6 +29,7 @@ const NAV_ITEMS = [
   { title: 'Pedidos',       href: '/pedidos',       icon: ShoppingBag,     minSize: 'micro'   },
   { title: 'Órdenes',       href: '/ordenes',       icon: ShoppingCart,    minSize: 'small'   },
   { title: 'Proveedores',   href: '/proveedores',   icon: Truck,           minSize: 'small'   },
+  { title: 'Finanzas',      href: '/finanzas',      icon: DollarSign,      minSize: 'small'   },
   { title: 'Asistente',     href: '/asistente',     icon: MessageSquare,   minSize: 'micro'   },
   { title: 'Configuración', href: '/configuracion', icon: Settings,        minSize: 'micro'   },
 ]
